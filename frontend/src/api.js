@@ -1,8 +1,13 @@
 import axios from 'axios';
 
 const getApiUrl = () => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+  let url = import.meta.env.VITE_API_URL;
+  if (url) {
+    // Automatically append /api if the user forgot it in their Vercel configuration
+    if (!url.endsWith('/api') && !url.endsWith('/api/')) {
+      url = url.endsWith('/') ? `${url}api` : `${url}/api`;
+    }
+    return url;
   }
   if (window.location.hostname.includes('serveousercontent.com')) {
     return 'https://222841ce14e2c960-49-204-104-29.serveousercontent.com/api';
