@@ -1,0 +1,233 @@
+:root {
+  /* Centralized Theme System - Theme 1: Cyber-Violet */
+  --primary-color: #6366f1;
+  --primary-hover: #4f46e5;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+  --dark-danger-color: #991b1b;
+
+  /* Theme variables - Default Dark Mode */
+  --bg-color: #0b0f19;
+  --sidebar-bg: #0f172a;
+  --card-bg: rgba(17, 24, 39, 0.75);
+  --text-color: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --input-bg: rgba(15, 23, 42, 0.6);
+  --input-text: #ffffff;
+  --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  --glass-blur: blur(16px);
+  --code-text: #a5b4fc;
+}
+
+body.light-mode {
+  /* Theme variables - Light Mode overrides */
+  --bg-color: #f8fafc;
+  --sidebar-bg: #ffffff;
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --text-color: #0f172a;
+  --text-muted: #64748b;
+  --border-color: rgba(15, 23, 42, 0.08);
+  --input-bg: #ffffff;
+  --input-text: #0f172a;
+  --shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.05);
+  --code-text: #4f46e5;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+#root {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.main-content {
+  padding: 2rem 0;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--sidebar-bg);
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.nav-brand-text {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--text-color) 0%, var(--text-muted) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.nav-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.nav-link:hover {
+  color: var(--text-color);
+}
+
+.active-link {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 0.25rem;
+}
+
+/* Auth Forms */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  padding: 1rem;
+}
+
+.auth-form {
+  background-color: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  padding: 2.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: var(--shadow);
+  transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+.auth-form h2 {
+  margin-top: 0;
+  text-align: center;
+  color: var(--text-color);
+}
+
+.auth-form label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group input, .form-group textarea, .form-group select {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.submit-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.auth-switch {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.auth-switch a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+.logout-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  color: white;
+  border-color: var(--danger-color);
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.error-message {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--danger-color);
+  color: #fca5a5;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-weight: bold;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+body.light-mode .error-message {
+  color: #b91c1c;
+  background-color: #fef2f2;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+}

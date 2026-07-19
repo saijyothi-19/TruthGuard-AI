@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: truthguard_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  backend:
+    build: ./backend
+    container_name: truthguard_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - MONGODB_URI=mongodb://mongodb:27017/truthguard_db
+      - JWT_SECRET_KEY=supersecretkey_change_me_in_production_truthguard
+      - OPENAI_API_KEY=
+      - VIRUSTOTAL_API_KEY=
+      - GOOGLE_SAFE_BROWSING_API_KEY=
+      - URLSCAN_API_KEY=
+      - ABUSEIPDB_API_KEY=
+      - TWILIO_ACCOUNT_SID=
+      - TWILIO_AUTH_TOKEN=
+      - TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+    depends_on:
+      - mongodb
+
+  frontend:
+    build: ./frontend
+    container_name: truthguard_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+
+volumes:
+  mongodb_data:
