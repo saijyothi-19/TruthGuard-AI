@@ -48,9 +48,39 @@ def send_email_via_resend(to_email: str, subject: str, html_body: str, text_body
         logger.error(f"Error sending email via Resend API: {e}")
         return False
 
+def send_email_via_brevo(to_email: str, subject: str, html_body: str) -> bool:
+    """
+    Sends an email using the Brevo HTTP API (via HTTPS port 443).
+    """
+    if not settings.brevo_api_key:
+        return False
+        
+    try:
+        headers = {
+            "api-key": settings.brevo_api_key,
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "sender": {"name": "TruthGuard AI Security", "email": "truthguardai22@gmail.com"},
+            "to": [{"email": to_email}],
+            "subject": subject,
+            "htmlContent": html_body
+        }
+        with httpx.Client(timeout=10.0) as client:
+            response = client.post("https://api.brevo.com/v3/smtp/email", headers=headers, json=payload)
+            if response.status_code in [200, 201]:
+                logger.info(f"Email sent successfully via Brevo API to {to_email}")
+                return True
+            else:
+                logger.error(f"Brevo API returned error {response.status_code}: {response.text}")
+                return False
+    except Exception as e:
+        logger.error(f"Error sending email via Brevo API: {e}")
+        return False
+
 def send_email_otp(to_email: str, otp: str) -> bool:
     """
-    Sends an Email OTP via Resend HTTP API or SMTP. Fallback to console logs if credentials are missing.
+    Sends an Email OTP via Brevo, Resend HTTP API, or SMTP. Fallback to console logs if credentials are missing.
     """
     smtp_host = settings.smtp_host
     smtp_port = settings.smtp_port
@@ -81,7 +111,12 @@ def send_email_otp(to_email: str, otp: str) -> bool:
     
     text_body = f"Hello,\n\nYour TruthGuard AI verification code is: {otp}\n\nEnter this code on the website to verify your account. This code expires in 15 minutes.\n\nFor support, contact: truthguardai22@gmail.com"
     
-    # 1. Try Resend HTTP API first (unblocked on Render)
+    # 1. Try Brevo HTTP API first (unblocked, sends to anyone)
+    if settings.brevo_api_key:
+        if send_email_via_brevo(to_email, "TruthGuard AI Security Notification", body):
+            return True
+            
+    # 2. Try Resend HTTP API (unblocked, sandbox-restricted)
     if settings.resend_api_key:
         if send_email_via_resend(to_email, "TruthGuard AI Security Notification", body, text_body):
             return True
@@ -145,7 +180,7 @@ def send_phone_otp(to_phone: str, otp: str) -> bool:
 
 def send_reset_email(to_email: str, code: str) -> bool:
     """
-    Sends a Password Reset verification code via Resend HTTP API or SMTP.
+    Sends a Password Reset verification code via Brevo, Resend HTTP API, or SMTP.
     """
     smtp_host = settings.smtp_host
     smtp_port = settings.smtp_port
@@ -176,12 +211,17 @@ def send_reset_email(to_email: str, code: str) -> bool:
     
     text_body = f"Hello,\n\nYour TruthGuard AI password reset verification code is: {code}\n\nEnter this code on the website to reset your password. This code expires in 15 minutes.\n\nFor support, contact: truthguardai22@gmail.com"
     
-    # 1. Try Resend HTTP API first (unblocked on Render)
+    # 1. Try Brevo HTTP API first (unblocked, sends to anyone)
+    if settings.brevo_api_key:
+        if send_email_via_brevo(to_email, "TruthGuard AI Password Reset", body):
+            return True
+            
+    # 2. Try Resend HTTP API (unblocked, sandbox-restricted)
     if settings.resend_api_key:
         if send_email_via_resend(to_email, "TruthGuard AI Password Reset", body, text_body):
             return True
             
-    # 2. Fallback to standard SMTP
+    # 3. Fallback to standard SMTP
     if smtp_host and smtp_user and smtp_pass:
         try:
             msg = MIMEMultipart("alternative")
@@ -216,7 +256,7 @@ def send_reset_email(to_email: str, code: str) -> bool:
 
 def send_welcome_email(to_email: str, username: str) -> bool:
     """
-    Sends a welcome email via Resend HTTP API or SMTP after successful registration and verification.
+    Sends a welcome email via Brevo, Resend HTTP API, or SMTP after successful registration and verification.
     """
     smtp_host = settings.smtp_host
     smtp_port = settings.smtp_port
@@ -245,12 +285,17 @@ def send_welcome_email(to_email: str, username: str) -> bool:
     
     text_body = f"Hello {username},\n\nThanks for joining TruthGuard!\n\nYour account is now verified. For support, contact: truthguardai22@gmail.com"
     
-    # 1. Try Resend HTTP API first (unblocked on Render)
+    # 1. Try Brevo HTTP API first (unblocked, sends to anyone)
+    if settings.brevo_api_key:
+        if send_email_via_brevo(to_email, "Welcome to TruthGuard AI!", body):
+            return True
+            
+    # 2. Try Resend HTTP API (unblocked, sandbox-restricted)
     if settings.resend_api_key:
         if send_email_via_resend(to_email, "Welcome to TruthGuard AI!", body, text_body):
             return True
             
-    # 2. Fallback to standard SMTP
+    # 3. Fallback to standard SMTP
     if smtp_host and smtp_user and smtp_pass:
         try:
             msg = MIMEMultipart("alternative")
@@ -281,7 +326,7 @@ def send_welcome_email(to_email: str, username: str) -> bool:
 
 def send_feedback_thank_you_email(to_email: str, username: str) -> bool:
     """
-    Sends a thank-you email via Resend HTTP API or SMTP after successful feedback submission.
+    Sends a thank-you email via Brevo, Resend HTTP API, or SMTP after successful feedback submission.
     """
     smtp_host = settings.smtp_host
     smtp_port = settings.smtp_port
@@ -307,12 +352,17 @@ def send_feedback_thank_you_email(to_email: str, username: str) -> bool:
     
     text_body = f"Hello {username},\n\nThank you for your feedback! We appreciate your support in improving TruthGuard AI.\n\nFor support, contact: truthguardai22@gmail.com"
     
-    # 1. Try Resend HTTP API first (unblocked on Render)
+    # 1. Try Brevo HTTP API first (unblocked, sends to anyone)
+    if settings.brevo_api_key:
+        if send_email_via_brevo(to_email, "Thank you for your feedback!", body):
+            return True
+            
+    # 2. Try Resend HTTP API (unblocked, sandbox-restricted)
     if settings.resend_api_key:
         if send_email_via_resend(to_email, "Thank you for your feedback!", body, text_body):
             return True
             
-    # 2. Fallback to standard SMTP
+    # 3. Fallback to standard SMTP
     if smtp_host and smtp_user and smtp_pass:
         try:
             msg = MIMEMultipart("alternative")
