@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     google_safe_browsing_api_key: str = ""
     urlscan_api_key: str = ""
     abuseipdb_api_key: str = ""
+    resend_api_key: str = ""
     
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""

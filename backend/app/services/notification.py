@@ -4,6 +4,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 import logging
+import httpx
 from app.config import settings
 from app.services.twilio_helper import send_whatsapp_message
 
@@ -15,9 +16,41 @@ def generate_otp() -> str:
     """
     return str(random.randint(100000, 999999))
 
+def send_email_via_resend(to_email: str, subject: str, html_body: str, text_body: str) -> bool:
+    """
+    Sends an email using the Resend REST API (via HTTPS port 443).
+    """
+    if not settings.resend_api_key:
+        return False
+        
+    try:
+        from_email = "TruthGuard AI <onboarding@resend.dev>"
+        headers = {
+            "Authorization": f"Bearer {settings.resend_api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "from": from_email,
+            "to": [to_email],
+            "subject": subject,
+            "html": html_body,
+            "text": text_body
+        }
+        with httpx.Client(timeout=10.0) as client:
+            response = client.post("https://api.resend.com/emails", headers=headers, json=payload)
+            if response.status_code in [200, 201]:
+                logger.info(f"Email sent successfully via Resend API to {to_email}")
+                return True
+            else:
+                logger.error(f"Resend API returned error {response.status_code}: {response.text}")
+                return False
+    except Exception as e:
+        logger.error(f"Error sending email via Resend API: {e}")
+        return False
+
 def send_email_otp(to_email: str, otp: str) -> bool:
     """
-    Sends an Email OTP via SMTP. Fallback to console logs if credentials are missing.
+    Sends an Email OTP via Resend HTTP API or SMTP. Fallback to console logs if credentials are missing.
     """
     smtp_host = settings.smtp_host
     smtp_port = settings.smtp_port
@@ -46,6 +79,14 @@ def send_email_otp(to_email: str, otp: str) -> bool:
     </html>
     """
     
+    text_body = f"Hello,\n\nYour TruthGuard AI verification code is: {otp}\n\nEnter this code on the website to verify your account. This code expires in 15 minutes.\n\nFor support, contact: truthguardai22@gmail.com"
+    
+    # 1. Try Resend HTTP API first (unblocked on Render)
+    if settings.resend_api_key:
+        if send_email_via_resend(to_email, "TruthGuard AI Security Notification", body, text_body):
+            return True
+            
+    # 2. Fallback to standard SMTP
     if smtp_host and smtp_user and smtp_pass:
         try:
             msg = MIMEMultipart("alternative")
@@ -53,18 +94,14 @@ def send_email_otp(to_email: str, otp: str) -> bool:
             msg["From"] = f'"TruthGuard AI Security" <{smtp_from}>'
             msg["To"] = to_email
             
-            # Anti-Spam: Attach both plain text and HTML alternatives
-            text_body = f"Hello,\n\nYour TruthGuard AI verification code is: {otp}\n\nEnter this code on the website to verify your account. This code expires in 15 minutes.\n\nFor support, contact: truthguardai22@gmail.com"
             msg.attach(MIMEText(text_body, "plain"))
             msg.attach(MIMEText(body, "html"))
             
-            # High-priority headers to ensure instant inbox placement
             msg["X-Priority"] = "1"
             msg["Importance"] = "high"
             msg["Precedence"] = "personal"
             
-            # Connect to SMTP
-            server = smtplib.SMTP(smtp_host, int(smtp_port))
+            server = smtplib.SMTP(smtp_host, int(smtp_port), timeout=5.0)
             server.starttls()
             server.login(smtp_user, smtp_pass)
             server.sendmail(smtp_from, to_email, msg.as_string())
@@ -72,8 +109,7 @@ def send_email_otp(to_email: str, otp: str) -> bool:
             logger.info(f"Email OTP sent successfully to {to_email}")
             return True
         except Exception as e:
-            logger.error(f"Failed to send email OTP: {e}")
-            # fall through to mock log
+            logger.error(f"Failed to send email OTP via SMTP: {e}")
     
     # Fallback mock logging
     logger.warning(
@@ -109,7 +145,7 @@ def send_phone_otp(to_phone: str, otp: str) -> bool:
 
 def send_reset_email(to_email: str, code: str) -> bool:
     """
-    Sends a Password Reset verification code via SMTP.
+    Sends a Password Reset verification code via Resend HTTP API or SMTP.
     """
     smtp_host = settings.smtp_host
     smtp_port = settings.smtp_port
@@ -138,6 +174,14 @@ def send_reset_email(to_email: str, code: str) -> bool:
     </html>
     """
     
+    text_body = f"Hello,\n\nYour TruthGuard AI password reset verification code is: {code}\n\nEnter this code on the website to reset your password. This code expires in 15 minutes.\n\nFor support, contact: truthguardai22@gmail.com"
+    
+    # 1. Try Resend HTTP API first (unblocked on Render)
+    if settings.resend_api_key:
+        if send_email_via_resend(to_email, "TruthGuard AI Password Reset", body, text_body):
+            return True
+            
+    # 2. Fallback to standard SMTP
     if smtp_host and smtp_user and smtp_pass:
         try:
             msg = MIMEMultipart("alternative")
@@ -145,7 +189,6 @@ def send_reset_email(to_email: str, code: str) -> bool:
             msg["From"] = f'"TruthGuard AI Security" <{smtp_from}>'
             msg["To"] = to_email
             
-            text_body = f"Hello,\n\nYour TruthGuard AI password reset verification code is: {code}\n\nEnter this code on the website to reset your password. This code expires in 15 minutes.\n\nFor support, contact: truthguardai22@gmail.com"
             msg.attach(MIMEText(text_body, "plain"))
             msg.attach(MIMEText(body, "html"))
             
@@ -153,7 +196,7 @@ def send_reset_email(to_email: str, code: str) -> bool:
             msg["Importance"] = "high"
             msg["Precedence"] = "personal"
             
-            server = smtplib.SMTP(smtp_host, int(smtp_port))
+            server = smtplib.SMTP(smtp_host, int(smtp_port), timeout=5.0)
             server.starttls()
             server.login(smtp_user, smtp_pass)
             server.sendmail(smtp_from, to_email, msg.as_string())
@@ -161,7 +204,7 @@ def send_reset_email(to_email: str, code: str) -> bool:
             logger.info(f"Password reset email sent successfully to {to_email}")
             return True
         except Exception as e:
-            logger.error(f"Failed to send password reset email: {e}")
+            logger.error(f"Failed to send password reset email via SMTP: {e}")
             
     logger.warning(
         f"\n======================================================\n"
@@ -173,7 +216,7 @@ def send_reset_email(to_email: str, code: str) -> bool:
 
 def send_welcome_email(to_email: str, username: str) -> bool:
     """
-    Sends a welcome email after successful registration and verification.
+    Sends a welcome email via Resend HTTP API or SMTP after successful registration and verification.
     """
     smtp_host = settings.smtp_host
     smtp_port = settings.smtp_port
@@ -200,6 +243,14 @@ def send_welcome_email(to_email: str, username: str) -> bool:
     </html>
     """
     
+    text_body = f"Hello {username},\n\nThanks for joining TruthGuard!\n\nYour account is now verified. For support, contact: truthguardai22@gmail.com"
+    
+    # 1. Try Resend HTTP API first (unblocked on Render)
+    if settings.resend_api_key:
+        if send_email_via_resend(to_email, "Welcome to TruthGuard AI!", body, text_body):
+            return True
+            
+    # 2. Fallback to standard SMTP
     if smtp_host and smtp_user and smtp_pass:
         try:
             msg = MIMEMultipart("alternative")
@@ -207,11 +258,10 @@ def send_welcome_email(to_email: str, username: str) -> bool:
             msg["From"] = f'"TruthGuard AI Security" <{smtp_from}>'
             msg["To"] = to_email
             
-            text_body = f"Hello {username},\n\nThanks for joining TruthGuard!\n\nYour account is now verified. For support, contact: truthguardai22@gmail.com"
             msg.attach(MIMEText(text_body, "plain"))
             msg.attach(MIMEText(body, "html"))
             
-            server = smtplib.SMTP(smtp_host, int(smtp_port))
+            server = smtplib.SMTP(smtp_host, int(smtp_port), timeout=5.0)
             server.starttls()
             server.login(smtp_user, smtp_pass)
             server.sendmail(smtp_from, to_email, msg.as_string())
@@ -219,7 +269,7 @@ def send_welcome_email(to_email: str, username: str) -> bool:
             logger.info(f"Welcome email sent successfully to {to_email}")
             return True
         except Exception as e:
-            logger.error(f"Failed to send welcome email: {e}")
+            logger.error(f"Failed to send welcome email via SMTP: {e}")
             
     logger.warning(
         f"\n======================================================\n"
@@ -231,7 +281,7 @@ def send_welcome_email(to_email: str, username: str) -> bool:
 
 def send_feedback_thank_you_email(to_email: str, username: str) -> bool:
     """
-    Sends a thank-you email after successful feedback submission.
+    Sends a thank-you email via Resend HTTP API or SMTP after successful feedback submission.
     """
     smtp_host = settings.smtp_host
     smtp_port = settings.smtp_port
@@ -255,6 +305,14 @@ def send_feedback_thank_you_email(to_email: str, username: str) -> bool:
     </html>
     """
     
+    text_body = f"Hello {username},\n\nThank you for your feedback! We appreciate your support in improving TruthGuard AI.\n\nFor support, contact: truthguardai22@gmail.com"
+    
+    # 1. Try Resend HTTP API first (unblocked on Render)
+    if settings.resend_api_key:
+        if send_email_via_resend(to_email, "Thank you for your feedback!", body, text_body):
+            return True
+            
+    # 2. Fallback to standard SMTP
     if smtp_host and smtp_user and smtp_pass:
         try:
             msg = MIMEMultipart("alternative")
@@ -262,11 +320,10 @@ def send_feedback_thank_you_email(to_email: str, username: str) -> bool:
             msg["From"] = f'"TruthGuard AI Security" <{smtp_from}>'
             msg["To"] = to_email
             
-            text_body = f"Hello {username},\n\nThank you for your feedback! We appreciate your support in improving TruthGuard AI.\n\nFor support, contact: truthguardai22@gmail.com"
             msg.attach(MIMEText(text_body, "plain"))
             msg.attach(MIMEText(body, "html"))
             
-            server = smtplib.SMTP(smtp_host, int(smtp_port))
+            server = smtplib.SMTP(smtp_host, int(smtp_port), timeout=5.0)
             server.starttls()
             server.login(smtp_user, smtp_pass)
             server.sendmail(smtp_from, to_email, msg.as_string())
@@ -274,7 +331,7 @@ def send_feedback_thank_you_email(to_email: str, username: str) -> bool:
             logger.info(f"Feedback thank-you email sent successfully to {to_email}")
             return True
         except Exception as e:
-            logger.error(f"Failed to send feedback thank-you email: {e}")
+            logger.error(f"Failed to send feedback thank-you email via SMTP: {e}")
             
     logger.warning(
         f"\n======================================================\n"
