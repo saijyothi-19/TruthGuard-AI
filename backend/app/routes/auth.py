@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from app.database import get_db
 from app.schemas.auth import UserRegister, UserLogin, Token, UserOut, VerifyOTPRequest
 from app.security.auth_handler import hash_password, verify_password, create_access_token
@@ -29,8 +29,87 @@ class VerifyLoginOTPRequest(BaseModel):
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+@router.get("/test-email")
+async def test_email_diagnostics(email: str = "truthguardai22@gmail.com"):
+    results = {}
+    
+    # 1. Test Brevo HTTP API
+    if settings.brevo_api_key:
+        try:
+            from_email = settings.smtp_from if settings.smtp_from else settings.smtp_user
+            if not from_email:
+                from_email = "truthguardai22@gmail.com"
+            headers = {"api-key": settings.brevo_api_key, "Content-Type": "application/json"}
+            payload = {
+                "sender": {"name": "TruthGuard AI Security", "email": from_email},
+                "to": [{"email": email}],
+                "subject": "TruthGuard Railway Brevo Test",
+                "htmlContent": "<p>Test email from Railway via Brevo API</p>"
+            }
+            with httpx.Client(timeout=10.0) as client:
+                res = client.post("https://api.brevo.com/v3/smtp/email", headers=headers, json=payload)
+                results["brevo_api"] = {"status_code": res.status_code, "response": res.text}
+        except Exception as e:
+            results["brevo_api"] = {"error": str(e)}
+    else:
+        results["brevo_api"] = {"status": "skipped", "reason": "BREVO_API_KEY is not set in environment"}
+
+    # 2. Test Resend HTTP API
+    if settings.resend_api_key:
+        try:
+            headers = {"Authorization": f"Bearer {settings.resend_api_key}", "Content-Type": "application/json"}
+            payload = {
+                "from": "TruthGuard AI <onboarding@resend.dev>",
+                "to": [email],
+                "subject": "TruthGuard Railway Resend Test",
+                "html": "<p>Test email from Railway via Resend API</p>"
+            }
+            with httpx.Client(timeout=10.0) as client:
+                res = client.post("https://api.resend.com/emails", headers=headers, json=payload)
+                results["resend_api"] = {"status_code": res.status_code, "response": res.text}
+        except Exception as e:
+            results["resend_api"] = {"error": str(e)}
+    else:
+        results["resend_api"] = {"status": "skipped", "reason": "RESEND_API_KEY is not set in environment"}
+
+    # 3. Test Gmail SSL (Port 465)
+    if settings.smtp_user and settings.smtp_password:
+        try:
+            msg = MIMEText("Test email from Railway via Gmail SSL 465")
+            msg["Subject"] = "TruthGuard Railway SSL 465 Test"
+            msg["From"] = settings.smtp_user
+            msg["To"] = email
+            
+            server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=5.0)
+            server.login(settings.smtp_user, settings.smtp_password)
+            server.sendmail(settings.smtp_user, email, msg.as_string())
+            server.quit()
+            results["gmail_ssl_465"] = {"status": "success"}
+        except Exception as e:
+            results["gmail_ssl_465"] = {"error": str(e)}
+            
+        # 4. Test Gmail TLS (Port 587)
+        try:
+            msg = MIMEText("Test email from Railway via Gmail TLS 587")
+            msg["Subject"] = "TruthGuard Railway TLS 587 Test"
+            msg["From"] = settings.smtp_user
+            msg["To"] = email
+            
+            server = smtplib.SMTP("smtp.gmail.com", 587, timeout=5.0)
+            server.starttls()
+            server.login(settings.smtp_user, settings.smtp_password)
+            server.sendmail(settings.smtp_user, email, msg.as_string())
+            server.quit()
+            results["gmail_tls_587"] = {"status": "success"}
+        except Exception as e:
+            results["gmail_tls_587"] = {"error": str(e)}
+    else:
+        results["gmail_smtp"] = {"status": "skipped", "reason": "SMTP_USER or SMTP_PASSWORD is not set"}
+
+    return {"status": "diagnostics_complete", "environment_variables": {"smtp_user": settings.smtp_user, "has_smtp_password": bool(settings.smtp_password), "has_brevo_key": bool(settings.brevo_api_key), "has_resend_key": bool(settings.resend_api_key)}, "results": results}
+
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-async def register(user_data: UserRegister):
+async def register(user_data: UserRegister, background_tasks: BackgroundTasks):
     db = await get_db()
     if db is None:
         raise HTTPException(status_code=500, detail="Database connection not available")
@@ -95,10 +174,10 @@ async def register(user_data: UserRegister):
     try:
         result = await db.temp_users.insert_one(user_doc)
         
-        # Dispatch verification codes
-        send_email_otp(user_data.email, email_otp)
+        # Dispatch verification codes in background
+        background_tasks.add_task(send_email_otp, user_data.email, email_otp)
         if cleaned_phone:
-            send_phone_otp(cleaned_phone, phone_otp)
+            background_tasks.add_task(send_phone_otp, cleaned_phone, phone_otp)
             
         return {
             "id": str(result.inserted_id),
@@ -170,7 +249,7 @@ async def verify_otp(payload: VerifyOTPRequest):
         raise HTTPException(status_code=500, detail="Failed to save verification status")
 
 @router.post("/login", response_model=LoginResponse)
-async def login(credentials: UserLogin):
+async def login(credentials: UserLogin, background_tasks: BackgroundTasks):
     db = await get_db()
     if db is None:
         raise HTTPException(status_code=500, detail="Database connection not available")
@@ -212,9 +291,9 @@ async def login(credentials: UserLogin):
             }}
         )
         
-        # Send codes
-        send_email_otp(user["email"], email_otp)
-        send_phone_otp(user["phone"], phone_otp)
+        # Send codes in background
+        background_tasks.add_task(send_email_otp, user["email"], email_otp)
+        background_tasks.add_task(send_phone_otp, user["phone"], phone_otp)
         
         return {
             "status": "requires_otp",
@@ -274,7 +353,7 @@ async def verify_login_otp(payload: VerifyLoginOTPRequest):
         raise HTTPException(status_code=500, detail="Failed to verify credentials.")
 
 @router.post("/forgot-password")
-async def forgot_password(payload: ForgotPasswordRequest):
+async def forgot_password(payload: ForgotPasswordRequest, background_tasks: BackgroundTasks):
     db = await get_db()
     if db is None:
         raise HTTPException(status_code=500, detail="Database connection not available")
@@ -295,7 +374,7 @@ async def forgot_password(payload: ForgotPasswordRequest):
             }}
         )
         
-        send_reset_email(payload.email, reset_code)
+        background_tasks.add_task(send_reset_email, payload.email, reset_code)
         
         return {"status": "success", "message": "Verification code sent successfully to your email."}
     except Exception as e:
