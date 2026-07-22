@@ -10,6 +10,7 @@ import {
 import { Html5Qrcode } from 'html5-qrcode';
 import Tesseract from 'tesseract.js';
 import { AuthContext } from '../context/AuthContext';
+import { NotificationContext } from '../context/NotificationContext';
 import { 
   getAnalytics, getScanHistory, scanUrl, scanMessage, 
   getBlacklist, addToBlacklist, deleteFromBlacklist,
@@ -20,8 +21,31 @@ import './Dashboard.css';
 
 function Dashboard() {
   const { user } = useContext(AuthContext);
+  const { addNotification } = useContext(NotificationContext);
   const [activeTab, setActiveTab] = useState('simulator');
   const [loading, setLoading] = useState(true);
+
+  // Custom Event Listeners for Navbar Menu & Notification Clicks
+  useEffect(() => {
+    const handleSwitchTab = (e) => {
+      if (e.detail) setActiveTab(e.detail);
+    };
+
+    const handleOpenReport = (e) => {
+      if (e.detail) {
+        setActiveTab('simulator');
+        setScanResult(e.detail);
+      }
+    };
+
+    window.addEventListener('switchDashboardTab', handleSwitchTab);
+    window.addEventListener('openScanReport', handleOpenReport);
+
+    return () => {
+      window.removeEventListener('switchDashboardTab', handleSwitchTab);
+      window.removeEventListener('openScanReport', handleOpenReport);
+    };
+  }, []);
 
   // Feedback States
   const [feedbackRating, setFeedbackRating] = useState(5);
@@ -145,6 +169,11 @@ function Dashboard() {
       setScanResult(result);
       setScanStatus('complete');
       setScanStatusText('Analysis Complete');
+      addNotification(
+        "Threat Analysis Ready", 
+        `Classified as ${result.classification} (Risk Score: ${Math.round(result.risk_score)}%). Click to view full report.`, 
+        result
+      );
       refreshData();
     } catch (err) {
       setScanError(err.response?.data?.detail || 'Analysis timed out or failed. Please check backend.');
@@ -295,6 +324,11 @@ function Dashboard() {
         result = await scanMessage(msgInput);
       }
       setScanResult(result);
+      addNotification(
+        "Threat Analysis Ready", 
+        `Classified as ${result.classification} (Risk Score: ${Math.round(result.risk_score)}%). Click to view full report.`, 
+        result
+      );
       // Refresh analytics & history silently
       refreshData();
     } catch (err) {
