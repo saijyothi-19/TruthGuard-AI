@@ -11,6 +11,8 @@ import { Html5Qrcode } from 'html5-qrcode';
 import Tesseract from 'tesseract.js';
 import { AuthContext } from '../context/AuthContext';
 import { NotificationContext } from '../context/NotificationContext';
+import ParticleBackground from '../components/ParticleBackground';
+import { SkeletonCard, SkeletonChart, SkeletonTable } from '../components/SkeletonLoader';
 import { 
   getAnalytics, getScanHistory, scanUrl, scanMessage, 
   getBlacklist, addToBlacklist, deleteFromBlacklist,
@@ -261,8 +263,8 @@ function Dashboard() {
               try {
                 ocrProcessingRef.current = true;
                 const canvas = document.createElement('canvas');
-                canvas.width = Math.min(videoElem.videoWidth, 640);
-                canvas.height = Math.min(videoElem.videoHeight, 480);
+                canvas.width = Math.min(videoElem.videoWidth, 480);
+                canvas.height = Math.min(videoElem.videoHeight, 360);
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(videoElem, 0, 0, canvas.width, canvas.height);
                 
@@ -1345,7 +1347,8 @@ ${rec}`;
 
   return (
     <div className="dashboard-layout full-width-layout">
-      <main className="main-content">
+      <ParticleBackground />
+      <main className="main-content" style={{ position: 'relative', zIndex: 1 }}>
         <header className="main-header">
           <div className="header-info">
             <h1>{user?.role === 'admin' ? 'TruthGuard AI Cybersecurity Console' : 'TruthGuard AI Safety Portal'}</h1>
@@ -1357,9 +1360,15 @@ ${rec}`;
         </header>
 
         {loading && (user?.role === 'admin' ? !analytics : false) ? (
-          <div className="loading-container">
-            <RefreshCw className="spin text-blue" size={32} />
-            <p>Syncing dashboard with MongoDB...</p>
+          <div className="skeleton-grid-wrapper">
+            <div className="metrics-cards-grid">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+            <SkeletonChart />
+            <SkeletonTable />
           </div>
         ) : (
           <>

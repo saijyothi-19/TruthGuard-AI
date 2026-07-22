@@ -56,13 +56,24 @@ const Navbar = () => {
   return (
     <>
       <nav className="navbar">
-        <div className="nav-left flex-center" style={{ gap: '1rem' }}>
+        <div className="nav-left flex-center" style={{ gap: '0.75rem', display: 'flex', alignItems: 'center' }}>
           <Link to="/" onClick={() => handleMenuTabClick('home')} className="nav-brand flex-center" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-            <Shield size={22} style={{ color: 'var(--primary-color)', marginRight: '0.5rem', filter: 'drop-shadow(0 0 6px rgba(99, 102, 241, 0.4))' }} />
-            <span className="nav-brand-text" style={{ fontSize: '1.2rem', fontStyle: 'normal' }}>
+            <Shield size={22} style={{ color: 'var(--primary-color)', marginRight: '0.4rem', filter: 'drop-shadow(0 0 6px rgba(99, 102, 241, 0.4))' }} />
+            <span className="nav-brand-text" style={{ fontSize: '1.2rem', fontStyle: 'normal', fontWeight: '700' }}>
               TruthGuard AI
             </span>
           </Link>
+
+          {/* Hamburger Menu Button (☰) placed directly beside Logo */}
+          <button 
+            className="hamburger-btn" 
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            title="Open Navigation Menu"
+            style={{ background: 'rgba(99, 102, 241, 0.12)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            {showMobileMenu ? <X size={18} /> : <Menu size={18} />}
+            <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>Menu</span>
+          </button>
         </div>
 
         <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -138,16 +149,6 @@ const Navbar = () => {
             title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
           >
             {theme === 'dark' ? <Sun size={20} style={{ color: '#fbbf24' }} /> : <Moon size={20} style={{ color: '#6366f1' }} />}
-          </button>
-
-          {/* Hamburger Menu Button (☰) */}
-          <button 
-            className="hamburger-btn" 
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            title="Open Navigation Drawer"
-            style={{ background: 'var(--primary-color)', color: '#fff', border: 'none' }}
-          >
-            {showMobileMenu ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </nav>

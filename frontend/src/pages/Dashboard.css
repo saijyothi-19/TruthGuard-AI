@@ -999,5 +999,70 @@
   }
 }
 
+/* ==========================================================================
+   Skeleton Shimmer Loaders & Glassmorphism Animation
+   ========================================================================== */
 
+.skeleton-grid-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
 
+.skeleton-card, .skeleton-chart-container, .skeleton-table-container {
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.skeleton-line {
+  height: 14px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.03) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.skeleton-line.skeleton-title { width: 40%; height: 12px; }
+.skeleton-line.skeleton-value { width: 70%; height: 24px; margin: 10px 0; }
+.skeleton-line.skeleton-sub { width: 30%; height: 10px; }
+.skeleton-line.skeleton-header { width: 25%; height: 18px; margin-bottom: 1rem; }
+
+.skeleton-box.skeleton-chart {
+  height: 220px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 10px;
+}
+
+.skeleton-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.skeleton-cell {
+  height: 16px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.skeleton-cell.sm { width: 15%; }
+.skeleton-cell.md { width: 30%; }
+.skeleton-cell.lg { width: 50%; }
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
