@@ -1,13 +1,14 @@
-import { useState, useEffect, useContext, useCallback } from 'react';
+import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { 
   Shield, Activity, FileText, Settings, Globe, AlertTriangle, CheckCircle, 
   MessageSquare, Plus, Trash2, Search, Lock, RefreshCw, Eye, ExternalLink, HelpCircle,
-  Camera
+  Camera, Zap, Scan, RotateCcw, Sparkles, Check
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line, Cell, PieChart, Pie
 } from 'recharts';
 import { Html5Qrcode } from 'html5-qrcode';
+import Tesseract from 'tesseract.js';
 import { AuthContext } from '../context/AuthContext';
 import { 
   getAnalytics, getScanHistory, scanUrl, scanMessage, 
@@ -63,15 +64,22 @@ function Dashboard() {
   const [blacklist, setBlacklist] = useState([]);
   const [whitelist, setWhitelist] = useState([]);
 
-  // Simulator States
+  // Simulator & Smart Scanner States
   const [simType, setSimType] = useState('url');
   const [urlInput, setUrlInput] = useState('');
   const [msgInput, setMessageInput] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [scanError, setScanError] = useState(null);
-  const [qrActive, setQrActive] = useState(false);
+  const [qrActive, setQrActive] = useState(true); // Default camera active for smart scanning
   const [qrCameraError, setQrCameraError] = useState(null);
+  
+  // Smart Scanner Specific States
+  const [cameraFacing, setCameraFacing] = useState('environment'); // 'environment' (back) or 'user' (front)
+  const [scanStatus, setScanStatus] = useState('waiting'); // 'waiting', 'qr_detected', 'url_detected', 'scanning', 'complete'
+  const [scanStatusText, setScanStatusText] = useState('Point your camera at a QR code or printed URL.');
+  const [detectedSource, setDetectedSource] = useState(null);
+  const ocrProcessingRef = useRef(false);
 
   // Blacklist/Whitelist Inputs
   const [listType, setListType] = useState('blacklist'); // blacklist or whitelist
@@ -119,6 +127,8 @@ function Dashboard() {
 
   const triggerAutoScan = useCallback(async (text, isUrl) => {
     setScanning(true);
+    setScanStatus('scanning');
+    setScanStatusText('Scanning Threat Vector...');
     setScanResult(null);
     setScanError(null);
     try {
@@ -133,52 +143,127 @@ function Dashboard() {
         result = await scanMessage(text);
       }
       setScanResult(result);
+      setScanStatus('complete');
+      setScanStatusText('Analysis Complete');
       refreshData();
     } catch (err) {
       setScanError(err.response?.data?.detail || 'Analysis timed out or failed. Please check backend.');
+      setScanStatus('waiting');
+      setScanStatusText('Point your camera at a QR code or printed URL.');
     } finally {
       setScanning(false);
     }
   }, []);
 
-  // QR Scanner Lifecycle Effect
+  const handleResetScan = () => {
+    setScanResult(null);
+    setScanError(null);
+    setScanStatus('waiting');
+    setScanStatusText('Point your camera at a QR code or printed URL.');
+    setDetectedSource(null);
+    setUrlInput('');
+    setMessageInput('');
+    setQrActive(true);
+    setQrCameraError(null);
+  };
+
+  const toggleCameraFacing = () => {
+    setCameraFacing(prev => prev === 'environment' ? 'user' : 'environment');
+  };
+
+  // Smart Camera & OCR Scanner Effect
   useEffect(() => {
     let html5QrCode;
     let isMounted = true;
+    let ocrInterval;
     
-    if (qrActive) {
+    if (qrActive && !scanning && scanStatus !== 'complete') {
       const timer = setTimeout(() => {
         try {
           html5QrCode = new Html5Qrcode("qr-reader");
-          const config = { fps: 10, qrbox: { width: 180, height: 180 } };
+          const config = { fps: 10, qrbox: { width: 220, height: 220 } };
           
-          // Detect mobile device to choose correct facing lens
-          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-          const constraint = isMobile ? { facingMode: "environment" } : { facingMode: "user" };
+          const constraint = { facingMode: cameraFacing };
           
-          // Start the scanner directly using camera constraints to bypass Brave's enumerateDevices shields block
           html5QrCode.start(
             constraint,
             config,
             (decodedText) => {
+              if (!isMounted) return;
               const isUrl = decodedText.startsWith("http://") || 
                             decodedText.startsWith("https://") || 
                             /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}/.test(decodedText);
               
-              triggerAutoScan(decodedText, isUrl);
-
+              setScanStatus('qr_detected');
+              setDetectedSource('QR Code');
+              setScanStatusText(`QR Code Detected: ${decodedText.substring(0, 35)}...`);
+              
               html5QrCode.stop().then(() => {
-                if (isMounted) setQrActive(false);
+                if (isMounted) {
+                  setQrActive(false);
+                  triggerAutoScan(decodedText, isUrl);
+                }
               }).catch(err => console.error("Error stopping QR reader", err));
             },
             () => {}
           ).catch(err => {
             if (isMounted) {
-              console.error("Camera access error:", err);
-              const errMsg = err?.message || err?.toString() || "Unknown error";
-              setQrCameraError(`Could not access camera: ${errMsg}. If you are on laptop, make sure no other app (Zoom/Teams) is using the webcam.`);
+              console.error("Camera access error with facingMode:", cameraFacing, err);
+              if (cameraFacing === 'environment') {
+                // Fallback to front camera automatically if back camera is unavailable
+                setCameraFacing('user');
+              } else {
+                const errMsg = err?.message || err?.toString() || "Unknown error";
+                setQrCameraError(`Could not access camera: ${errMsg}. Please check camera permissions.`);
+              }
             }
           });
+
+          // Start OCR Frame Processing Loop every 1200ms
+          ocrInterval = setInterval(async () => {
+            if (!isMounted || ocrProcessingRef.current || scanning || scanStatus === 'complete') return;
+            const videoElem = document.querySelector('#qr-reader video');
+            if (videoElem && videoElem.readyState >= 2 && videoElem.videoWidth > 0) {
+              try {
+                ocrProcessingRef.current = true;
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.min(videoElem.videoWidth, 640);
+                canvas.height = Math.min(videoElem.videoHeight, 480);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(videoElem, 0, 0, canvas.width, canvas.height);
+                
+                const { data } = await Tesseract.recognize(canvas, 'eng');
+                const rawText = data?.text || '';
+                
+                // Match URLs in OCR text
+                const urlMatch = rawText.match(/(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi);
+                if (urlMatch && urlMatch.length > 0) {
+                  let foundUrl = urlMatch[0].trim().replace(/[\),\.\>\'\"]+$/, '');
+                  if (!foundUrl.startsWith('http://') && !foundUrl.startsWith('https://')) {
+                    foundUrl = `https://${foundUrl}`;
+                  }
+                  
+                  if (foundUrl.length > 5 && isMounted) {
+                    console.log("OCR Detected URL:", foundUrl);
+                    setScanStatus('url_detected');
+                    setDetectedSource('Printed URL (OCR)');
+                    setScanStatusText(`URL Detected via OCR: ${foundUrl}`);
+                    
+                    if (html5QrCode && html5QrCode.isScanning) {
+                      await html5QrCode.stop();
+                    }
+                    setQrActive(false);
+                    triggerAutoScan(foundUrl, true);
+                  }
+                }
+              } catch (ocrErr) {
+                // Ignore transient OCR read errors
+              } finally {
+                ocrProcessingRef.current = false;
+              }
+            }
+          }, 1200);
+
         } catch (e) {
           console.error(e);
         }
@@ -187,12 +272,13 @@ function Dashboard() {
       return () => {
         isMounted = false;
         clearTimeout(timer);
+        if (ocrInterval) clearInterval(ocrInterval);
         if (html5QrCode && html5QrCode.isScanning) {
           html5QrCode.stop().catch(err => console.error("Error stopping QR reader:", err));
         }
       };
     }
-  }, [qrActive, triggerAutoScan]);
+  }, [qrActive, cameraFacing, scanning, scanStatus, triggerAutoScan]);
 
   const handleScanSubmit = async (e) => {
     e.preventDefault();
@@ -410,69 +496,162 @@ ${rec}`;
       <div className="tab-content simulator-layout">
         <div className="sim-grid">
           <div className="glass-card sim-form-panel">
-            <h3>Forward Suspicious Content</h3>
-            <p className="card-subtitle">Simulate incoming WhatsApp forward triggers to test URL feature metrics and NLP models.</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <h3>Smart Scanner & Threat Intelligence</h3>
+              <div className="status-badge-container">
+                <span className={`status-badge ${scanStatus}`}>
+                  {scanStatus === 'scanning' && <RefreshCw size={12} className="spin" />}
+                  {scanStatus === 'complete' && <Check size={12} />}
+                  {scanStatus === 'waiting' && <Zap size={12} />}
+                  {scanStatus === 'qr_detected' || scanStatus === 'url_detected' ? <Scan size={12} /> : null}
+                  {scanStatusText}
+                </span>
+              </div>
+            </div>
+            <p className="card-subtitle" style={{ marginBottom: '1.2rem' }}>
+              Point camera at any QR Code, Barcode, or Printed URL (OCR). The scanner automatically detects content and analyzes threat vectors without manual clicks.
+            </p>
             
-            <div className="sim-action-row" style={{ display: 'flex', gap: '10px', marginBottom: '1.5rem', alignItems: 'center' }}>
+            <div className="sim-action-row" style={{ display: 'flex', gap: '10px', marginBottom: '1.25rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <div className="sim-tabs" style={{ margin: 0, flex: 1 }}>
                 <button type="button" className={simType === 'url' ? 'active' : ''} onClick={() => setSimType('url')}>URL Link Scanner</button>
                 <button type="button" className={simType === 'message' ? 'active' : ''} onClick={() => setSimType('message')}>Full Text Scanner</button>
               </div>
-              <button 
-                type="button" 
-                className={`qr-toggle-btn ${qrActive ? 'active' : ''}`} 
-                onClick={() => {
-                  setQrActive(!qrActive);
-                  setQrCameraError(null);
-                }}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '6px', 
-                  padding: '0.65rem 1rem', 
-                  borderRadius: '8px', 
-                  border: '1px solid var(--border-color)', 
-                  background: qrActive ? 'var(--primary)' : 'rgba(255,255,255,0.03)', 
-                  color: '#fff', 
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '0.85rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <Camera size={16} /> {qrActive ? 'Close Camera' : 'Scan QR Code'}
-              </button>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {qrActive && (
+                  <button 
+                    type="button" 
+                    onClick={toggleCameraFacing}
+                    title="Switch between Front and Back camera"
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      padding: '0.65rem 0.9rem', 
+                      borderRadius: '8px', 
+                      border: '1px solid var(--border-color)', 
+                      background: 'rgba(255,255,255,0.06)', 
+                      color: '#f1f5f9', 
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      fontSize: '0.8rem',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <RotateCcw size={14} /> Switch Camera ({cameraFacing === 'environment' ? 'Back' : 'Front'})
+                  </button>
+                )}
+                
+                <button 
+                  type="button" 
+                  className={`qr-toggle-btn ${qrActive ? 'active' : ''}`} 
+                  onClick={() => {
+                    setQrActive(!qrActive);
+                    setQrCameraError(null);
+                  }}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '6px', 
+                    padding: '0.65rem 1rem', 
+                    borderRadius: '8px', 
+                    border: '1px solid var(--border-color)', 
+                    background: qrActive ? 'var(--primary)' : 'rgba(255,255,255,0.03)', 
+                    color: '#fff', 
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '0.85rem',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <Camera size={16} /> {qrActive ? 'Close Camera' : 'Open Camera'}
+                </button>
+              </div>
             </div>
 
             {qrActive && (
               <div className="qr-scanner-box animate-fade" style={{ 
-                background: 'rgba(15, 23, 42, 0.6)', 
+                background: 'rgba(15, 23, 42, 0.75)', 
                 border: '1px dashed var(--primary)', 
                 borderRadius: '12px', 
                 padding: '1.25rem', 
                 marginBottom: '1.5rem',
                 textAlign: 'center',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+                boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                position: 'relative'
               }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: '600' }}>📷 Camera QR Scanner</h4>
-                <p style={{ margin: '0 0 1rem 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Align a phishing link or scam message QR code inside the box below.</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Sparkles size={14} /> Smart Camera (QR, Barcode & OCR)
+                  </h4>
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '4px' }}>
+                    Lens: {cameraFacing === 'environment' ? 'Back' : 'Front'}
+                  </span>
+                </div>
+                
+                <p style={{ margin: '0 0 1rem 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  Point camera at a QR code, barcode, or printed URL link. Detection & Threat Analysis run automatically.
+                </p>
+
                 <div id="qr-reader" style={{ 
                   width: '100%', 
-                  maxWidth: '240px', 
+                  maxWidth: '300px', 
                   margin: '0 auto', 
                   overflow: 'hidden', 
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   background: '#000',
-                  border: '2px solid rgba(255,255,255,0.05)'
+                  border: '2px solid rgba(255,255,255,0.1)',
+                  position: 'relative'
                 }}></div>
+
                 {qrCameraError && <p style={{ color: 'var(--danger)', fontSize: '0.75rem', marginTop: '0.5rem', fontWeight: '500' }}>{qrCameraError}</p>}
+              </div>
+            )}
+
+            {scanStatus === 'complete' && (
+              <div className="scan-again-banner animate-fade" style={{
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid #10b981',
+                borderRadius: '10px',
+                padding: '1rem',
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                  <h5 style={{ margin: 0, color: '#10b981', fontSize: '0.9rem', fontWeight: '600' }}>Scan Completed Successfully</h5>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#cbd5e1' }}>
+                    Detected via: {detectedSource || 'Smart Scanner'}. Results updated in WhatsApp preview.
+                  </p>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={handleResetScan} 
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '0.5rem 1rem',
+                    background: '#10b981',
+                    color: '#0f172a',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  <RotateCcw size={14} /> Scan Again
+                </button>
               </div>
             )}
 
             <form onSubmit={handleScanSubmit}>
               {simType === 'url' ? (
                 <div className="form-group">
-                  <label>Suspicious URL</label>
+                  <label>Suspicious URL (Auto-detected from Camera or enter manually)</label>
                   <input 
                     type="text" 
                     placeholder="e.g. http://secure-paypal-login-verify.xyz/update-auth" 
@@ -484,9 +663,9 @@ ${rec}`;
                 </div>
               ) : (
                 <div className="form-group">
-                  <label>Message Content</label>
+                  <label>Message Content (Auto-detected from Camera or enter manually)</label>
                   <textarea 
-                    rows={6}
+                    rows={4}
                     placeholder="e.g. URGENT: Congratulations, you won $1,000,000 lottery! To claim, verify your credit card pin code here:..."
                     value={msgInput}
                     onChange={(e) => setMessageInput(e.target.value)}
@@ -502,7 +681,7 @@ ${rec}`;
               </button>
             </form>
 
-            {scanError && <div className="error-banner flex-center"><AlertTriangle size={18} /> {scanError}</div>}
+            {scanError && <div className="error-banner flex-center" style={{ marginTop: '1rem' }}><AlertTriangle size={18} /> {scanError}</div>}
           </div>
 
           <div className="mock-phone-wrapper">
