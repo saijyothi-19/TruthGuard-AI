@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>TruthGuard AI</title>
+    <style>
+      body {
+        width: 320px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #0f172a;
+        color: #f8fafc;
+        padding: 16px;
+        margin: 0;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 10px;
+      }
+      .header h3 { margin: 0; font-size: 1rem; color: #818cf8; }
+      .btn {
+        width: 100%;
+        padding: 10px;
+        background: #6366f1;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        margin-bottom: 12px;
+      }
+      .btn:hover { background: #4f46e5; }
+      .result-box {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 0.8rem;
+        display: none;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 0.75rem;
+      }
+      .badge-green { background: rgba(16,185,129,0.2); color: #10b981; }
+      .badge-red { background: rgba(239,68,68,0.2); color: #ef4444; }
+    </style>
+  </head>
+  <body>
+    <div className="header">
+      🛡️ <h3>TruthGuard AI Guardian</h3>
+    </div>
+
+    <button id="scan-btn" className="btn">🚀 Analyze Current Website Tab</button>
+
+    <div id="loading" style="display:none; text-align:center; font-size:0.8rem; color:#94a3b8; margin-bottom:12px;">
+      Scanning website with AI engine...
+    </div>
+
+    <div id="result" className="result-box">
+      <div style="display:flex; justify-between; align-items:center; margin-bottom:8px;">
+        <strong id="res-classification">Clean Website</strong>
+        <span id="res-badge" className="badge badge-green">SAFE</span>
+      </div>
+      <p id="res-url" style="color:#94a3b8; font-size:0.7rem; word-break:break-all; margin:0 0 8px 0;"></p>
+      <div style="font-size:0.75rem; color:#cbd5e1;">Risk Score: <strong id="res-score">0%</strong></div>
+      <p id="res-explanation" style="font-size:0.75rem; color:#94a3b8; margin-top:8px; border-top:1px solid #334155; padding-top:8px;"></p>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

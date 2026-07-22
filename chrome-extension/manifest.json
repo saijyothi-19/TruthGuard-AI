@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "TruthGuard AI - Cyber Security Scanner",
+  "version": "1.0.0",
+  "description": "Instant AI-powered Phishing & Scam Website Detector for Google Chrome.",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["https://truthguard-ai-production-cefd.up.railway.app/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Analyze Page with TruthGuard AI"
+  }
+}

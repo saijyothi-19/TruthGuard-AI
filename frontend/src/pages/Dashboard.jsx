@@ -13,6 +13,8 @@ import { AuthContext } from '../context/AuthContext';
 import { NotificationContext } from '../context/NotificationContext';
 import ParticleBackground from '../components/ParticleBackground';
 import { SkeletonCard, SkeletonChart, SkeletonTable } from '../components/SkeletonLoader';
+import DangerousUrlModal from '../components/DangerousUrlModal';
+import SecurityChatWidget from '../components/SecurityChatWidget';
 import { exportToPDF, exportToCSV, exportToJSON } from '../utils/exportUtils';
 import { 
   getAnalytics, getScanHistory, scanUrl, scanMessage, 
@@ -27,6 +29,7 @@ function Dashboard() {
   const { addNotification } = useContext(NotificationContext);
   const [activeTab, setActiveTab] = useState('home');
   const [loading, setLoading] = useState(true);
+  const [dangerModalResult, setDangerModalResult] = useState(null);
 
   // Custom Event Listeners for Navbar Menu & Notification Clicks
   useEffect(() => {
@@ -177,6 +180,9 @@ function Dashboard() {
       setScanResult(result);
       setScanStatus('complete');
       setScanStatusText('Analysis Complete');
+      if (result.risk_score > 70 || result.threat_level === 'Red' || result.threat_level === 'Dark Red') {
+        setDangerModalResult(result);
+      }
       addNotification(
         "Threat Analysis Ready", 
         `Classified as ${result.classification} (Risk Score: ${Math.round(result.risk_score)}%). Click to view full report.`, 
@@ -1685,6 +1691,17 @@ ${rec}`;
           </div>
         </div>
       )}
+
+      {/* Dangerous URL Full-Screen Alert Modal */}
+      {dangerModalResult && (
+        <DangerousUrlModal 
+          resultData={dangerModalResult} 
+          onClose={() => setDangerModalResult(null)} 
+        />
+      )}
+
+      {/* AI Security Assistant Chatbot Widget */}
+      <SecurityChatWidget />
     </div>
   );
 }
