@@ -271,8 +271,15 @@ async def login(credentials: UserLogin, background_tasks: BackgroundTasks):
     if db is None:
         raise HTTPException(status_code=500, detail="Database connection not available")
         
-    # Find user by username
-    user = await db.users.find_one({"username": credentials.username})
+    # Find user by username OR email (case-insensitive)
+    query_str = credentials.username.strip()
+    user = await db.users.find_one({
+        "$or": [
+            {"username": query_str},
+            {"username": query_str.lower()},
+            {"email": query_str.lower()}
+        ]
+    })
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
