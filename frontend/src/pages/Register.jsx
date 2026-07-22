@@ -44,7 +44,17 @@ const Register = () => {
       await registerUser(formData.username, formData.email, formData.password, finalPhone);
       navigate(`/verify?username=${encodeURIComponent(formData.username)}`);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Registration failed. Try a different username/email.');
+      console.error("Registration submit error:", err);
+      const detail = err.response?.data?.detail;
+      if (typeof detail === 'string') {
+        setError(detail);
+      } else if (Array.isArray(detail)) {
+        setError(detail.map(d => d.msg).join(', '));
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Registration failed. Try a different username/email.');
+      }
     } finally {
       setLoading(false);
     }
