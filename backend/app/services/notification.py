@@ -115,14 +115,14 @@ def send_email_otp(to_email: str, otp: str) -> bool:
     
     text_body = f"Hello,\n\nYour TruthGuard AI verification code is: {otp}\n\nEnter this code on the website to verify your account. This code expires in 15 minutes.\n\nFor support, contact: truthguardai22@gmail.com"
     
-    # 1. Try Brevo HTTP API first (unblocked, sends to anyone)
-    if settings.brevo_api_key:
-        if send_email_via_brevo(to_email, "TruthGuard AI Security Notification", body):
-            return True
-            
-    # 2. Try Resend HTTP API (unblocked, sandbox-restricted)
+    # 1. Try Resend HTTP API first (pre-authenticated domain, instant delivery)
     if settings.resend_api_key:
         if send_email_via_resend(to_email, "TruthGuard AI Security Notification", body, text_body):
+            return True
+
+    # 2. Try Brevo HTTP API (fallback)
+    if settings.brevo_api_key:
+        if send_email_via_brevo(to_email, "TruthGuard AI Security Notification", body):
             return True
             
     # 2. Fallback to standard SMTP
@@ -215,14 +215,14 @@ def send_reset_email(to_email: str, code: str) -> bool:
     
     text_body = f"Hello,\n\nYour TruthGuard AI password reset verification code is: {code}\n\nEnter this code on the website to reset your password. This code expires in 15 minutes.\n\nFor support, contact: truthguardai22@gmail.com"
     
-    # 1. Try Brevo HTTP API first (unblocked, sends to anyone)
-    if settings.brevo_api_key:
-        if send_email_via_brevo(to_email, "TruthGuard AI Password Reset", body):
-            return True
-            
-    # 2. Try Resend HTTP API (unblocked, sandbox-restricted)
+    # 1. Try Resend HTTP API first (pre-authenticated domain, instant delivery)
     if settings.resend_api_key:
         if send_email_via_resend(to_email, "TruthGuard AI Password Reset", body, text_body):
+            return True
+
+    # 2. Try Brevo HTTP API (fallback)
+    if settings.brevo_api_key:
+        if send_email_via_brevo(to_email, "TruthGuard AI Password Reset", body):
             return True
             
     # 3. Fallback to standard SMTP
@@ -260,7 +260,7 @@ def send_reset_email(to_email: str, code: str) -> bool:
 
 def send_welcome_email(to_email: str, username: str) -> bool:
     """
-    Sends a welcome email via Brevo, Resend HTTP API, or SMTP after successful registration and verification.
+    Sends a welcome email via Resend HTTP API, Brevo, or SMTP after successful registration and verification.
     """
     smtp_host = settings.smtp_host
     smtp_port = settings.smtp_port
@@ -289,14 +289,81 @@ def send_welcome_email(to_email: str, username: str) -> bool:
     
     text_body = f"Hello {username},\n\nThanks for joining TruthGuard!\n\nYour account is now verified. For support, contact: truthguardai22@gmail.com"
     
-    # 1. Try Brevo HTTP API first (unblocked, sends to anyone)
+    # 1. Try Resend HTTP API first (pre-authenticated domain, instant delivery)
+    if settings.resend_api_key:
+        if send_email_via_resend(to_email, "Welcome to TruthGuard AI!", body, text_body):
+            return True
+
+    # 2. Try Brevo HTTP API (fallback)
     if settings.brevo_api_key:
         if send_email_via_brevo(to_email, "Welcome to TruthGuard AI!", body):
             return True
             
-    # 2. Try Resend HTTP API (unblocked, sandbox-restricted)
+    # 3. Fallback to standard SMTP
+    if smtp_host and smtp_user and smtp_pass:
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = "Welcome to TruthGuard AI!"
+            msg["From"] = f'"TruthGuard AI Security" <{smtp_from}>'
+            msg["To"] = to_email
+            
+            msg.attach(MIMEText(text_body, "plain"))
+            msg.attach(MIMEText(body, "html"))
+            
+            server = smtplib.SMTP(smtp_host, int(smtp_port), timeout=5.0)
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_from, to_email, msg.as_string())
+            server.quit()
+            logger.info(f"Welcome email sent successfully to {to_email}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send welcome email via SMTP: {e}")
+            
+    logger.warning(
+        f"\n======================================================\n"
+        f"[MOCK WELCOME EMAIL] Sent to {to_email}:\n"
+        f"Thanks for joining TruthGuard!\n"
+        f"======================================================\n"
+    )
+    return True
+
+def send_feedback_thank_you_email(to_email: str, username: str) -> bool:
+    """
+    Sends a thank-you email via Resend HTTP API, Brevo, or SMTP after successful feedback submission.
+    """
+    smtp_host = settings.smtp_host
+    smtp_port = settings.smtp_port
+    smtp_user = settings.smtp_user
+    smtp_pass = settings.smtp_password
+    smtp_from = settings.smtp_from if settings.smtp_from else smtp_user
+    
+    body = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; background-color: #0f172a; color: #f1f5f9; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #1e293b; padding: 30px; border-radius: 10px; border: 1px solid #334155;">
+          <h2 style="color: #8b5cf6; text-align: center; margin-bottom: 20px;">🛡️ TruthGuard AI Feedback</h2>
+          <p>Hello <strong>{username}</strong>,</p>
+          <p>Thank you for your feedback! We truly appreciate you taking the time to share your thoughts and help us improve TruthGuard AI.</p>
+          <p style="margin-bottom: 25px;">Our team will review your comments as we continue to enhance our AI scanning engines and security dashboard.</p>
+          <p>For further assistance, you can contact us at <a href="mailto:truthguardai22@gmail.com" style="color: #a78bfa; text-decoration: none;">truthguardai22@gmail.com</a>.</p>
+          <hr style="border: 0; border-top: 1px solid #334155; margin: 30px 0;">
+          <p style="font-size: 12px; color: #94a3b8; text-align: center;">TruthGuard AI Security Systems</p>
+        </div>
+      </body>
+    </html>
+    """
+    
+    text_body = f"Hello {username},\n\nThank you for your feedback! We appreciate your support in improving TruthGuard AI.\n\nFor support, contact: truthguardai22@gmail.com"
+    
+    # 1. Try Resend HTTP API first (pre-authenticated domain, instant delivery)
     if settings.resend_api_key:
-        if send_email_via_resend(to_email, "Welcome to TruthGuard AI!", body, text_body):
+        if send_email_via_resend(to_email, "Thank you for your feedback!", body, text_body):
+            return True
+
+    # 2. Try Brevo HTTP API (fallback)
+    if settings.brevo_api_key:
+        if send_email_via_brevo(to_email, "Thank you for your feedback!", body):
             return True
             
     # 3. Fallback to standard SMTP
