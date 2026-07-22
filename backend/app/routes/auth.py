@@ -35,82 +35,95 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.get("/test-email")
 async def test_email_diagnostics(email: str = "truthguardai22@gmail.com"):
-    results = {}
-    
-    # 1. Test Brevo HTTP API
-    if settings.brevo_api_key:
-        try:
-            from_email = settings.smtp_from if settings.smtp_from else settings.smtp_user
-            if not from_email:
-                from_email = "truthguardai22@gmail.com"
-            headers = {"api-key": settings.brevo_api_key, "Content-Type": "application/json"}
-            payload = {
-                "sender": {"name": "TruthGuard AI Security", "email": from_email},
-                "to": [{"email": email}],
-                "subject": "TruthGuard Railway Brevo Test",
-                "htmlContent": "<p>Test email from Railway via Brevo API</p>"
-            }
-            with httpx.Client(timeout=10.0) as client:
-                res = client.post("https://api.brevo.com/v3/smtp/email", headers=headers, json=payload)
-                results["brevo_api"] = {"status_code": res.status_code, "response": res.text}
-        except Exception as e:
-            results["brevo_api"] = {"error": str(e)}
-    else:
-        results["brevo_api"] = {"status": "skipped", "reason": "BREVO_API_KEY is not set in environment"}
+    import traceback
+    try:
+        results = {}
+        
+        # 1. Test Brevo HTTP API
+        if settings.brevo_api_key:
+            try:
+                from_email = settings.smtp_from if settings.smtp_from else settings.smtp_user
+                if not from_email:
+                    from_email = "truthguardai22@gmail.com"
+                headers = {"api-key": settings.brevo_api_key, "Content-Type": "application/json"}
+                payload = {
+                    "sender": {"name": "TruthGuard AI Security", "email": from_email},
+                    "to": [{"email": email}],
+                    "subject": "TruthGuard Railway Brevo Test",
+                    "htmlContent": "<p>Test email from Railway via Brevo API</p>"
+                }
+                with httpx.Client(timeout=10.0) as client:
+                    res = client.post("https://api.brevo.com/v3/smtp/email", headers=headers, json=payload)
+                    results["brevo_api"] = {"status_code": res.status_code, "response": res.text}
+            except Exception as e:
+                results["brevo_api"] = {"error": str(e)}
+        else:
+            results["brevo_api"] = {"status": "skipped", "reason": "BREVO_API_KEY is not set in environment"}
 
-    # 2. Test Resend HTTP API
-    if settings.resend_api_key:
-        try:
-            headers = {"Authorization": f"Bearer {settings.resend_api_key}", "Content-Type": "application/json"}
-            payload = {
-                "from": "TruthGuard AI <onboarding@resend.dev>",
-                "to": [email],
-                "subject": "TruthGuard Railway Resend Test",
-                "html": "<p>Test email from Railway via Resend API</p>"
-            }
-            with httpx.Client(timeout=10.0) as client:
-                res = client.post("https://api.resend.com/emails", headers=headers, json=payload)
-                results["resend_api"] = {"status_code": res.status_code, "response": res.text}
-        except Exception as e:
-            results["resend_api"] = {"error": str(e)}
-    else:
-        results["resend_api"] = {"status": "skipped", "reason": "RESEND_API_KEY is not set in environment"}
+        # 2. Test Resend HTTP API
+        if settings.resend_api_key:
+            try:
+                headers = {"Authorization": f"Bearer {settings.resend_api_key}", "Content-Type": "application/json"}
+                payload = {
+                    "from": "TruthGuard AI <onboarding@resend.dev>",
+                    "to": [email],
+                    "subject": "TruthGuard Railway Resend Test",
+                    "html": "<p>Test email from Railway via Resend API</p>"
+                }
+                with httpx.Client(timeout=10.0) as client:
+                    res = client.post("https://api.resend.com/emails", headers=headers, json=payload)
+                    results["resend_api"] = {"status_code": res.status_code, "response": res.text}
+            except Exception as e:
+                results["resend_api"] = {"error": str(e)}
+        else:
+            results["resend_api"] = {"status": "skipped", "reason": "RESEND_API_KEY is not set in environment"}
 
-    # 3. Test Gmail SSL (Port 465)
-    if settings.smtp_user and settings.smtp_password:
-        try:
-            msg = MIMEText("Test email from Railway via Gmail SSL 465")
-            msg["Subject"] = "TruthGuard Railway SSL 465 Test"
-            msg["From"] = settings.smtp_user
-            msg["To"] = email
-            
-            server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=5.0)
-            server.login(settings.smtp_user, settings.smtp_password)
-            server.sendmail(settings.smtp_user, email, msg.as_string())
-            server.quit()
-            results["gmail_ssl_465"] = {"status": "success"}
-        except Exception as e:
-            results["gmail_ssl_465"] = {"error": str(e)}
-            
-        # 4. Test Gmail TLS (Port 587)
-        try:
-            msg = MIMEText("Test email from Railway via Gmail TLS 587")
-            msg["Subject"] = "TruthGuard Railway TLS 587 Test"
-            msg["From"] = settings.smtp_user
-            msg["To"] = email
-            
-            server = smtplib.SMTP("smtp.gmail.com", 587, timeout=5.0)
-            server.starttls()
-            server.login(settings.smtp_user, settings.smtp_password)
-            server.sendmail(settings.smtp_user, email, msg.as_string())
-            server.quit()
-            results["gmail_tls_587"] = {"status": "success"}
-        except Exception as e:
-            results["gmail_tls_587"] = {"error": str(e)}
-    else:
-        results["gmail_smtp"] = {"status": "skipped", "reason": "SMTP_USER or SMTP_PASSWORD is not set"}
+        # 3. Test Gmail SSL (Port 465)
+        if settings.smtp_user and settings.smtp_password:
+            try:
+                msg = MIMEText("Test email from Railway via Gmail SSL 465")
+                msg["Subject"] = "TruthGuard Railway SSL 465 Test"
+                msg["From"] = settings.smtp_user
+                msg["To"] = email
+                
+                server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=5.0)
+                server.login(settings.smtp_user, settings.smtp_password)
+                server.sendmail(settings.smtp_user, email, msg.as_string())
+                server.quit()
+                results["gmail_ssl_465"] = {"status": "success"}
+            except Exception as e:
+                results["gmail_ssl_465"] = {"error": str(e)}
+                
+            # 4. Test Gmail TLS (Port 587)
+            try:
+                msg = MIMEText("Test email from Railway via Gmail TLS 587")
+                msg["Subject"] = "TruthGuard Railway TLS 587 Test"
+                msg["From"] = settings.smtp_user
+                msg["To"] = email
+                
+                server = smtplib.SMTP("smtp.gmail.com", 587, timeout=5.0)
+                server.starttls()
+                server.login(settings.smtp_user, settings.smtp_password)
+                server.sendmail(settings.smtp_user, email, msg.as_string())
+                server.quit()
+                results["gmail_tls_587"] = {"status": "success"}
+            except Exception as e:
+                results["gmail_tls_587"] = {"error": str(e)}
+        else:
+            results["gmail_smtp"] = {"status": "skipped", "reason": "SMTP_USER or SMTP_PASSWORD is not set"}
 
-    return {"status": "diagnostics_complete", "environment_variables": {"smtp_user": settings.smtp_user, "has_smtp_password": bool(settings.smtp_password), "has_brevo_key": bool(settings.brevo_api_key), "has_resend_key": bool(settings.resend_api_key)}, "results": results}
+        return {
+            "status": "diagnostics_complete",
+            "environment_variables": {
+                "smtp_user": settings.smtp_user,
+                "has_smtp_password": bool(settings.smtp_password),
+                "has_brevo_key": bool(settings.brevo_api_key),
+                "has_resend_key": bool(settings.resend_api_key)
+            },
+            "results": results
+        }
+    except Exception as e:
+        return {"status": "failed", "error": str(e), "traceback": traceback.format_exc()}
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserRegister, background_tasks: BackgroundTasks):
