@@ -38,9 +38,12 @@ const Navbar = () => {
     localStorage.setItem('theme', nextTheme);
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    setShowMobileMenu(false);
+    setShowNotifPanel(false);
+    await logout();
+    addNotification("Signed Out", "Logged out successfully. Have a safe day!");
+    navigate('/login', { replace: true });
   };
 
   const [currentTab, setCurrentTab] = useState('home');

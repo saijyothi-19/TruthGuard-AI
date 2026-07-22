@@ -133,4 +133,13 @@ export const verifyLoginOTP = async (username, email_otp, phone_otp) => {
   return response.data;
 };
 
+export const logoutUser = async () => {
+  try {
+    const response = await api.post('/auth/logout');
+    return response.data;
+  } catch (e) {
+    return { status: 'success' };
+  }
+};
+
 export default api;

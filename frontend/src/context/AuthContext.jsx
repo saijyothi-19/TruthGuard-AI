@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
+import { logoutUser } from '../api';
 
 export const AuthContext = createContext();
 
@@ -48,8 +49,17 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const logout = () => {
-    localStorage.removeItem('truthguard_token');
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch (e) {
+      // Ignore network errors during logout
+    }
+    const theme = localStorage.getItem('theme');
+    localStorage.clear();
+    sessionStorage.clear();
+    if (theme) localStorage.setItem('theme', theme);
+
     setUser(null);
     setToken(null);
   };

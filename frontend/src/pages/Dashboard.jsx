@@ -22,7 +22,7 @@ import {
 import './Dashboard.css';
 
 function Dashboard() {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const { addNotification } = useContext(NotificationContext);
   const [activeTab, setActiveTab] = useState('home');
   const [loading, setLoading] = useState(true);
@@ -684,11 +684,26 @@ ${rec}`;
             <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#cbd5e1' }}>Role: <span className="status-pill success">{user?.role?.toUpperCase() || 'USER'}</span></p>
           </div>
 
-          <div className="settings-section">
+          <div className="settings-section" style={{ marginBottom: '1.5rem' }}>
             <h4 style={{ color: '#a5b4fc', fontSize: '0.9rem', marginBottom: '0.5rem' }}>System Status & Connections</h4>
             <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#10b981' }}>✓ MongoDB Atlas Database: Connected</p>
             <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#10b981' }}>✓ Railway Backend: Active (Port 443)</p>
             <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#10b981' }}>✓ Resend Email Service: Active</p>
+          </div>
+
+          <div className="settings-section" style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <h4 style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Account Session Actions</h4>
+            <button 
+              onClick={async () => {
+                await logout();
+                addNotification("Signed Out", "Logged out successfully. Have a safe day!");
+                window.location.href = '/login';
+              }} 
+              className="logout-btn" 
+              style={{ padding: '0.6rem 1.25rem', fontSize: '0.85rem', fontWeight: '600' }}
+            >
+              Sign Out of TruthGuard AI
+            </button>
           </div>
         </div>
       </div>

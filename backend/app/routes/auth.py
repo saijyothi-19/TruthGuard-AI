@@ -442,3 +442,8 @@ async def reset_password(payload: ResetPasswordRequest):
     except Exception as e:
         logger.error(f"Error resetting password: {e}")
         raise HTTPException(status_code=500, detail="Failed to save new password.")
+
+@router.post("/logout")
+async def logout_user():
+    return {"status": "success", "message": "Logged out successfully"}
+
