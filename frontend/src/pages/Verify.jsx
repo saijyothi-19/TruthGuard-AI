@@ -135,6 +135,41 @@ const Verify = () => {
           {loading ? 'Verifying Codes...' : (mode === 'login' ? 'Verify & Sign In' : 'Verify & Activate')}
         </button>
 
+        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!username) {
+                setError('Username missing. Please re-enter registration.');
+                return;
+              }
+              setLoading(true);
+              setError(null);
+              setSuccess(null);
+              try {
+                const { resendOTP } = await import('../api');
+                const res = await resendOTP(username);
+                setSuccess(res.message || 'A new OTP code has been dispatched to your Gmail inbox.');
+              } catch (err) {
+                setError(err.response?.data?.detail || 'Failed to resend OTP. Please try again.');
+              } finally {
+                setLoading(false);
+              }
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#818cf8',
+              fontSize: '0.85rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              textDecoration: 'underline'
+            }}
+          >
+            Didn't receive Gmail code? Click to Resend OTP 📩
+          </button>
+        </div>
+
         <p className="auth-switch">
           Need to sign in instead? <Link to="/login">Sign in here</Link>
         </p>

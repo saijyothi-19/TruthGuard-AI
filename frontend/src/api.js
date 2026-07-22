@@ -187,4 +187,9 @@ export const clearNotificationsApi = async () => {
   }
 };
 
+export const resendOTP = async (username) => {
+  const response = await api.post('/auth/resend-otp', { username });
+  return response.data;
+};
+
 export default api;

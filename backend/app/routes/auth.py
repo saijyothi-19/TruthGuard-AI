@@ -447,3 +447,58 @@ async def reset_password(payload: ResetPasswordRequest):
 async def logout_user():
     return {"status": "success", "message": "Logged out successfully"}
 
+class ResendOTPPayload(BaseModel):
+    username: str
+
+@router.post("/resend-otp")
+async def resend_otp(payload: ResendOTPPayload, background_tasks: BackgroundTasks):
+    db = await get_db()
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database connection not available")
+
+    # Search in temp_users (registration mode)
+    temp_user = await db.temp_users.find_one({"username": payload.username})
+    if temp_user:
+        new_email_otp = generate_otp()
+        new_phone_otp = generate_otp() if temp_user.get("phone") else "000000"
+        new_expiry = datetime.now(timezone.utc) + timedelta(minutes=15)
+
+        await db.temp_users.update_one(
+            {"_id": temp_user["_id"]},
+            {"$set": {
+                "email_otp": new_email_otp,
+                "phone_otp": new_phone_otp,
+                "otp_expiry": new_expiry
+            }}
+        )
+
+        background_tasks.add_task(send_email_otp, temp_user["email"], new_email_otp)
+        if temp_user.get("phone"):
+            background_tasks.add_task(send_phone_otp, temp_user["phone"], new_phone_otp)
+
+        return {"status": "success", "message": f"A new OTP code has been sent to {temp_user['email']}"}
+
+    # Search in users (login mode)
+    user = await db.users.find_one({"username": payload.username})
+    if user:
+        new_email_otp = generate_otp()
+        new_phone_otp = generate_otp() if user.get("phone") else "000000"
+        new_expiry = datetime.now(timezone.utc) + timedelta(minutes=15)
+
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {
+                "login_email_otp": new_email_otp,
+                "login_phone_otp": new_phone_otp,
+                "login_otp_expiry": new_expiry
+            }}
+        )
+
+        background_tasks.add_task(send_email_otp, user["email"], new_email_otp)
+        if user.get("phone"):
+            background_tasks.add_task(send_phone_otp, user["phone"], new_phone_otp)
+
+        return {"status": "success", "message": f"A new OTP code has been sent to {user['email']}"}
+
+    raise HTTPException(status_code=404, detail="User account not found.")
+
