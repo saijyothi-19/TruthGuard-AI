@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { AlertTriangle, ShieldOff, ExternalLink, ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { addToBlacklist } from '../api';
+import { AlertTriangle, ShieldOff, ArrowLeft, CheckCircle2, Flag } from 'lucide-react';
+import { addToBlacklist, submitFeedback } from '../api';
 
 const DangerousUrlModal = ({ resultData, onClose, onBlock }) => {
   const [blocked, setBlocked] = useState(false);
+  const [reported, setReported] = useState(false);
   const [loadingBlock, setLoadingBlock] = useState(false);
 
   if (!resultData) return null;
@@ -25,6 +26,20 @@ const DangerousUrlModal = ({ resultData, onClose, onBlock }) => {
     }
   };
 
+  const handleReportWebsite = async () => {
+    try {
+      await submitFeedback({
+        scan_id: resultData.id || "danger_modal_scan",
+        content: content,
+        user_classification: "Phishing Threat",
+        comments: "Reported directly from Dangerous URL Alert modal."
+      });
+      setReported(true);
+    } catch (e) {
+      setReported(true);
+    }
+  };
+
   const handleLeaveImmediately = () => {
     window.location.href = 'https://google.com';
   };
@@ -38,20 +53,21 @@ const DangerousUrlModal = ({ resultData, onClose, onBlock }) => {
       height: '100vh',
       background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 10, 15, 0.99) 100%)',
       backdropFilter: 'blur(20px)',
-      zIndex: 99999,
+      zIndex: 999999,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '1.5rem'
+      padding: '1.5rem',
+      pointerEvents: 'auto'
     }}>
       <div style={{
         maxWidth: '540px',
         width: '100%',
-        background: 'rgba(30, 41, 59, 0.9)',
+        background: 'rgba(30, 41, 59, 0.95)',
         border: '2px solid #ef4444',
         borderRadius: '20px',
         padding: '2.25rem',
-        boxShadow: '0 20px 60px rgba(239, 68, 68, 0.4)',
+        boxShadow: '0 20px 60px rgba(239, 68, 68, 0.5)',
         textAlign: 'center',
         color: '#f8fafc'
       }}>
@@ -129,34 +145,57 @@ const DangerousUrlModal = ({ resultData, onClose, onBlock }) => {
             <ArrowLeft size={18} /> Leave Immediately (Recommended)
           </button>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button
               onClick={handleBlockWebsite}
               disabled={blocked || loadingBlock}
               style={{
                 flex: 1,
-                padding: '0.75rem 1rem',
+                padding: '0.75rem 0.5rem',
                 background: blocked ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
                 color: blocked ? '#10b981' : '#f1f5f9',
                 border: blocked ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '10px',
                 fontWeight: '700',
-                fontSize: '0.85rem',
+                fontSize: '0.8rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px'
+                gap: '4px'
               }}
             >
-              {blocked ? <CheckCircle2 size={16} /> : <ShieldOff size={16} />}
+              {blocked ? <CheckCircle2 size={14} /> : <ShieldOff size={14} />}
               {blocked ? 'Domain Blocked' : 'Block Domain'}
+            </button>
+
+            <button
+              onClick={handleReportWebsite}
+              disabled={reported}
+              style={{
+                flex: 1,
+                padding: '0.75rem 0.5rem',
+                background: reported ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                color: reported ? '#3b82f6' : '#f1f5f9',
+                border: reported ? '1px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '10px',
+                fontWeight: '700',
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px'
+              }}
+            >
+              {reported ? <CheckCircle2 size={14} /> : <Flag size={14} />}
+              {reported ? 'Reported' : 'Report Website'}
             </button>
 
             <button
               onClick={onClose}
               style={{
-                padding: '0.75rem 1rem',
+                padding: '0.75rem 0.75rem',
                 background: 'transparent',
                 color: '#64748b',
                 border: '1px solid rgba(255, 255, 255, 0.08)',

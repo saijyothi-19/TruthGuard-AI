@@ -42,6 +42,15 @@ async def scan_url(payload: URLScanRequest, current_user: dict = Depends(get_cur
         logger.error(f"Error in scan-url endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/public-scan-url", response_model=ScanResultResponse)
+async def public_scan_url(payload: URLScanRequest):
+    try:
+        res = await scan_url_flow(payload.url, source="chrome_extension", username="extension_user")
+        return serialize_scan(res)
+    except Exception as e:
+        logger.error(f"Error in public-scan-url endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/scan-message", response_model=ScanResultResponse)
 async def scan_message(payload: MessageScanRequest, current_user: dict = Depends(get_current_user)):
     try:
