@@ -7,6 +7,10 @@ from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 import logging
+import smtplib
+import httpx
+from email.mime.text import MIMEText
+from app.config import settings
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
