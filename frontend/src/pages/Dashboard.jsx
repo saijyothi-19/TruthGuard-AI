@@ -22,12 +22,23 @@ import {
   getWhitelist, addToWhitelist, deleteFromWhitelist,
   submitFeedback, getAllFeedback
 } from '../api';
+import { useSearchParams } from 'react-router-dom';
 import './Dashboard.css';
 
 function Dashboard() {
   const { user, logout } = useContext(AuthContext);
   const { addNotification } = useContext(NotificationContext);
-  const [activeTab, setActiveTab] = useState('home');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const getInitialTab = () => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl) return tabFromUrl === 'rules' ? 'filters' : tabFromUrl;
+    const tabFromStorage = localStorage.getItem('truthguard_active_tab');
+    if (tabFromStorage) return tabFromStorage === 'rules' ? 'filters' : tabFromStorage;
+    return 'home';
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab);
   const [loading, setLoading] = useState(true);
   const [dangerModalResult, setDangerModalResult] = useState(null);
 
@@ -35,16 +46,19 @@ function Dashboard() {
   useEffect(() => {
     const handleSwitchTab = (e) => {
       if (e.detail) {
-        // Map tab names cleanly
         let target = e.detail;
         if (target === 'rules') target = 'filters';
         setActiveTab(target);
+        localStorage.setItem('truthguard_active_tab', target);
+        setSearchParams({ tab: target }, { replace: true });
       }
     };
 
     const handleOpenReport = (e) => {
       if (e.detail) {
         setActiveTab('simulator');
+        localStorage.setItem('truthguard_active_tab', 'simulator');
+        setSearchParams({ tab: 'simulator' }, { replace: true });
         setScanResult(e.detail);
       }
     };
@@ -56,23 +70,7 @@ function Dashboard() {
       window.removeEventListener('switchDashboardTab', handleSwitchTab);
       window.removeEventListener('openScanReport', handleOpenReport);
     };
-  }, []);
-
-  // Feedback States
-  const [feedbackRating, setFeedbackRating] = useState(5);
-  const [feedbackComment, setFeedbackComment] = useState('');
-  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
-  const [feedbackError, setFeedbackError] = useState(null);
-  const [feedbackSuccess, setFeedbackSuccess] = useState(null);
-  const [feedbackList, setFeedbackList] = useState([]);
-  const [feedbackLoading, setFeedbackLoading] = useState(false);
-
-  // Set default tab based on role
-  useEffect(() => {
-    if (user) {
-      setActiveTab(user.role === 'admin' ? 'overview' : 'simulator');
-    }
-  }, [user]);
+  }, [setSearchParams]);
 
   const loadFeedback = useCallback(async () => {
     setFeedbackLoading(true);
@@ -87,8 +85,12 @@ function Dashboard() {
   }, []);
 
   const handleTabChange = (tabName) => {
-    setActiveTab(tabName);
-    if (tabName === 'feedback' && user?.role === 'admin') {
+    let target = tabName;
+    if (target === 'rules') target = 'filters';
+    setActiveTab(target);
+    localStorage.setItem('truthguard_active_tab', target);
+    setSearchParams({ tab: target }, { replace: true });
+    if (target === 'feedback' && user?.role === 'admin') {
       loadFeedback();
     }
   };

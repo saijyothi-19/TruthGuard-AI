@@ -51,8 +51,7 @@ const Navbar = () => {
   const handleMenuTabClick = (tabName) => {
     setCurrentTab(tabName);
     setShowMobileMenu(false);
-    navigate('/');
-    // Dispatch custom event so Dashboard switches to target tab
+    navigate(`/?tab=${tabName}`);
     window.dispatchEvent(new CustomEvent('switchDashboardTab', { detail: tabName }));
   };
 
