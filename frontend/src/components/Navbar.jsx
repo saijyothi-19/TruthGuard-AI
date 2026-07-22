@@ -180,9 +180,11 @@ const Navbar = () => {
               <button className={`drawer-item ${currentTab === 'history' ? 'active' : ''}`} onClick={() => handleMenuTabClick('history')}>
                 <FileText size={18} /> Audit Logs
               </button>
-              <button className={`drawer-item ${currentTab === 'filters' || currentTab === 'rules' ? 'active' : ''}`} onClick={() => handleMenuTabClick('filters')}>
-                <Settings size={18} /> Policy Filters
-              </button>
+              {user?.role === 'admin' && (
+                <button className={`drawer-item ${currentTab === 'filters' || currentTab === 'rules' ? 'active' : ''}`} onClick={() => handleMenuTabClick('filters')}>
+                  <Settings size={18} /> Policy Filters
+                </button>
+              )}
               <button className={`drawer-item ${currentTab === 'feedback' ? 'active' : ''}`} onClick={() => handleMenuTabClick('feedback')}>
                 <MessageSquare size={18} /> User Feedback
               </button>

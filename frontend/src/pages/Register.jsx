@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerUser } from '../api';
 import { Eye, EyeOff } from 'lucide-react';
+import WhatsAppSandboxCard from '../components/WhatsAppSandboxCard';
 
 const countries = [
   { name: 'India', code: '+91', placeholder: '+91 0000000000', minLen: 10, maxLen: 10 },
@@ -15,6 +16,7 @@ const Register = () => {
   const [formData, setFormData] = useState({ username: '', email: '', password: '' });
   const [phoneInput, setPhoneInput] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
+  const [waConfirmed, setWaConfirmed] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -31,6 +33,11 @@ const Register = () => {
 
     let finalPhone = '';
     if (phoneInput.trim()) {
+      if (!waConfirmed) {
+        setError('Please check the confirmation box verifying that you have joined the Twilio WhatsApp Sandbox.');
+        setLoading(false);
+        return;
+      }
       const digits = phoneInput.replace(/\D/g, '');
       if (digits.length < selectedCountry.minLen || digits.length > selectedCountry.maxLen) {
         setError(`Invalid phone number length for ${selectedCountry.name}. Expected ${selectedCountry.minLen}-${selectedCountry.maxLen} digits.`);
@@ -86,8 +93,15 @@ const Register = () => {
             required
           />
         </div>
+
+        {/* Twilio WhatsApp Sandbox QR & Step 1 */}
+        <WhatsAppSandboxCard 
+          confirmed={waConfirmed} 
+          onConfirmChange={(checked) => setWaConfirmed(checked)} 
+        />
+
         <div className="form-group">
-          <label>WhatsApp Phone (Optional, to sync bot history)</label>
+          <label>WhatsApp Phone (Optional, for WhatsApp OTPs)</label>
           <div style={{ display: 'flex', gap: '8px' }}>
             <select
               value={selectedCountry.code}

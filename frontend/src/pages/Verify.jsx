@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { verifyOTP, verifyLoginOTP } from '../api';
 import { AuthContext } from '../context/AuthContext';
+import WhatsAppSandboxCard from '../components/WhatsAppSandboxCard';
 
 const Verify = () => {
   const navigate = useNavigate();
@@ -76,12 +77,12 @@ const Verify = () => {
             textAlign: 'center'
           }}
         >
-          OTP sent to Gmail and WhatsApp
+          OTP sent to Gmail (and WhatsApp if connected)
         </div>
 
         <p className="auth-subtitle" style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '20px', textAlign: 'center' }}>
           {mode === 'login' 
-            ? 'Verify your identity by entering the new secure codes sent to your registered destinations.' 
+            ? 'Verify your identity by entering the secure codes sent to your registered destinations.' 
             : 'Please enter the OTP verification codes sent to your registered destinations.'
           }
         </p>
@@ -113,6 +114,9 @@ const Verify = () => {
           />
         </div>
 
+        {/* Twilio WhatsApp Sandbox QR Code & Info */}
+        <WhatsAppSandboxCard confirmed={true} />
+
         <div className="form-group">
           <label>WhatsApp Verification Code (6-digit OTP)</label>
           <input
@@ -123,7 +127,7 @@ const Verify = () => {
             placeholder="e.g. 123456 (Enter 000000 if no phone registered)"
           />
           <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
-            Check WhatsApp on your phone for a message from the bot.
+            Check WhatsApp on your phone for a message from Twilio Sandbox.
           </span>
         </div>
 

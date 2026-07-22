@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { loginUser } from '../api';
 import { Eye, EyeOff } from 'lucide-react';
+import WhatsAppSandboxCard from '../components/WhatsAppSandboxCard';
 
 const Login = () => {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -10,6 +11,7 @@ const Login = () => {
   const [info, setInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showWaInfo, setShowWaInfo] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -66,6 +68,29 @@ const Login = () => {
           >
             {info}
           </div>
+        )}
+
+        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+          <button 
+            type="button" 
+            onClick={() => setShowWaInfo(!showWaInfo)}
+            style={{
+              background: 'rgba(16, 185, 129, 0.1)',
+              color: '#10b981',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              padding: '6px 12px',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}
+          >
+            {showWaInfo ? 'Hide WhatsApp Sandbox QR Code ▲' : '💬 Need to join WhatsApp Sandbox? Click for QR Code ▼'}
+          </button>
+        </div>
+
+        {showWaInfo && (
+          <WhatsAppSandboxCard confirmed={true} />
         )}
         <div className="form-group">
           <label>Username</label>
