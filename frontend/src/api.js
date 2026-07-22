@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const getApiUrl = () => {
+  // 1. Try VITE_API_URL from environment variables
   let url = import.meta.env.VITE_API_URL;
   if (url && typeof url === 'string' && url.trim().startsWith('http')) {
     url = url.trim().replace(/\/+$/, '');
@@ -12,10 +13,17 @@ const getApiUrl = () => {
     }
     return url;
   }
+  
+  // 2. Default to relative proxy path for seamless Vercel / local routing
+  if (typeof window !== 'undefined' && window.location) {
+    return '/api';
+  }
+  
   return 'https://truthguard-ai-production-cefd.up.railway.app/api';
 };
 
 const API_URL = getApiUrl();
+console.log("TruthGuard AI API initialized at:", API_URL);
 
 const api = axios.create({
   baseURL: API_URL

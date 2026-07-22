@@ -17,7 +17,8 @@ const Navbar = () => {
     setActiveToast, 
     markAsRead, 
     markAllAsRead, 
-    clearNotifications 
+    clearNotifications,
+    addNotification
   } = useContext(NotificationContext);
 
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');

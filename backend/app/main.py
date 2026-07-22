@@ -64,9 +64,17 @@ app = FastAPI(
 )
 
 # Configure CORS for frontend dashboard communication
+origins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+    "https://truth-guard-ai-five.vercel.app"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=".*",  # Allows all origins dynamically while supporting credentials
+    allow_origins=origins,
+    allow_origin_regex="https://.*vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
