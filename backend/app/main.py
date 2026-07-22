@@ -66,7 +66,7 @@ app = FastAPI(
 # Configure CORS for frontend dashboard communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all dashboard origins
+    allow_origin_regex=".*",  # Allows all origins dynamically while supporting credentials
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
