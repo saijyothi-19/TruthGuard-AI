@@ -13,7 +13,7 @@ const getApiUrl = () => {
     return 'https://222841ce14e2c960-49-204-104-29.serveousercontent.com/api';
   }
   if (window.location.protocol === 'https:') {
-    return 'https://young-bags-double.loca.lt/api';
+    return 'https://truthguard-ai-production-cefd.up.railway.app/api';
   }
   if (window.location.hostname !== 'localhost') {
     return `http://${window.location.hostname}:8000/api`;
