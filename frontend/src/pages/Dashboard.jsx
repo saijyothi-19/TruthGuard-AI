@@ -1590,7 +1590,7 @@ ${rec}`;
           </button>
         </header>
 
-        {loading && (user?.role === 'admin' ? !analytics : false) ? (
+        {loading && !analytics && activeTab === 'overview' ? (
           <div className="skeleton-grid-wrapper">
             <div className="metrics-cards-grid">
               <SkeletonCard />
@@ -1604,7 +1604,7 @@ ${rec}`;
         ) : (
           <>
             {activeTab === 'home' && renderHome()}
-            {activeTab === 'overview' && user?.role === 'admin' && renderOverview()}
+            {activeTab === 'overview' && renderOverview()}
             {activeTab === 'simulator' && renderSimulator()}
             {activeTab === 'history' && renderHistory()}
             {(activeTab === 'rules' || activeTab === 'filters') && user?.role === 'admin' && renderRules()}
