@@ -22,20 +22,35 @@ import {
   getWhitelist, addToWhitelist, deleteFromWhitelist,
   submitFeedback, getAllFeedback
 } from '../api';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import './Dashboard.css';
 
-function Dashboard() {
+function Dashboard({ defaultTab = 'home' }) {
   const { user, logout } = useContext(AuthContext);
   const { addNotification } = useContext(NotificationContext);
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
 
   const getInitialTab = () => {
+    const path = location.pathname.replace('/', '').toLowerCase();
+    if (path === 'analytics' || path === 'overview') return 'overview';
+    if (path === 'simulator') return 'simulator';
+    if (path === 'history') return 'history';
+    if (path === 'settings') return 'settings';
+    if (path === 'feedback') return 'feedback';
+    if (path === 'filters' || path === 'rules') return 'filters';
+
     const tabFromUrl = searchParams.get('tab');
-    if (tabFromUrl) return tabFromUrl === 'rules' ? 'filters' : tabFromUrl;
+    if (tabFromUrl) {
+      const normalized = tabFromUrl.toLowerCase();
+      if (normalized === 'analytics' || normalized === 'overview') return 'overview';
+      if (normalized === 'rules') return 'filters';
+      return normalized;
+    }
+
     const tabFromStorage = localStorage.getItem('truthguard_active_tab');
     if (tabFromStorage) return tabFromStorage === 'rules' ? 'filters' : tabFromStorage;
-    return 'home';
+    return defaultTab || 'home';
   };
 
   const [activeTab, setActiveTab] = useState(getInitialTab);
