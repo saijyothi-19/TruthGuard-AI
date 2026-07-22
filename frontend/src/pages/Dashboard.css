@@ -25,6 +25,14 @@
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
+.dashboard-layout.full-width-layout {
+  display: block;
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
 /* Sidebar Styling */
 .sidebar {
   width: 260px;

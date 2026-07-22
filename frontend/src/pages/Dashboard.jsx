@@ -1344,27 +1344,7 @@ ${rec}`;
   };
 
   return (
-    <div className="dashboard-layout">
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <Shield size={24} className="brand-logo" />
-          <h2>TruthGuard AI</h2>
-        </div>
-        <nav className="side-nav">
-          <button className={activeTab === 'home' ? 'active' : ''} onClick={() => handleTabChange('home')}><Home size={18}/> Home</button>
-          {user?.role === 'admin' && (
-            <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => handleTabChange('overview')}><Activity size={18}/> Security Analytics</button>
-          )}
-          <button className={activeTab === 'simulator' ? 'active' : ''} onClick={() => handleTabChange('simulator')}><Shield size={18}/> Threat Simulator</button>
-          <button className={activeTab === 'history' ? 'active' : ''} onClick={() => handleTabChange('history')}><FileText size={18}/> Audit Logs</button>
-          {user?.role === 'admin' && (
-            <button className={activeTab === 'rules' || activeTab === 'filters' ? 'active' : ''} onClick={() => handleTabChange('filters')}><Settings size={18}/> Policy Filters</button>
-          )}
-          <button className={activeTab === 'feedback' ? 'active' : ''} onClick={() => handleTabChange('feedback')}><MessageSquare size={18}/> User Feedback</button>
-          <button className={activeTab === 'settings' ? 'active' : ''} onClick={() => handleTabChange('settings')}><Settings size={18}/> Settings</button>
-        </nav>
-      </aside>
-
+    <div className="dashboard-layout full-width-layout">
       <main className="main-content">
         <header className="main-header">
           <div className="header-info">
