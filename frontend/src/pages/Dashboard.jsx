@@ -1590,6 +1590,33 @@ ${rec}`;
           </button>
         </header>
 
+        {/* Top Desktop & Mobile Tab Navigation Bar */}
+        <div className="dashboard-tab-bar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <button className={`tab-btn ${activeTab === 'home' ? 'active' : ''}`} onClick={() => handleTabChange('home')} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: activeTab === 'home' ? '#6366f1' : 'rgba(255,255,255,0.04)', color: '#fff', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            <Home size={16} /> Home
+          </button>
+          <button className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => handleTabChange('overview')} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: activeTab === 'overview' ? '#6366f1' : 'rgba(255,255,255,0.04)', color: '#fff', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            <Activity size={16} /> Security Analytics
+          </button>
+          <button className={`tab-btn ${activeTab === 'simulator' ? 'active' : ''}`} onClick={() => handleTabChange('simulator')} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: activeTab === 'simulator' ? '#6366f1' : 'rgba(255,255,255,0.04)', color: '#fff', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            <Zap size={16} /> Threat Simulator
+          </button>
+          <button className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => handleTabChange('history')} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: activeTab === 'history' ? '#6366f1' : 'rgba(255,255,255,0.04)', color: '#fff', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            <FileText size={16} /> Audit Logs
+          </button>
+          {user?.role === 'admin' && (
+            <button className={`tab-btn ${activeTab === 'filters' || activeTab === 'rules' ? 'active' : ''}`} onClick={() => handleTabChange('filters')} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: (activeTab === 'filters' || activeTab === 'rules') ? '#6366f1' : 'rgba(255,255,255,0.04)', color: '#fff', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+              <Settings size={16} /> Policy Filters
+            </button>
+          )}
+          <button className={`tab-btn ${activeTab === 'feedback' ? 'active' : ''}`} onClick={() => handleTabChange('feedback')} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: activeTab === 'feedback' ? '#6366f1' : 'rgba(255,255,255,0.04)', color: '#fff', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            <MessageSquare size={16} /> User Feedback
+          </button>
+          <button className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => handleTabChange('settings')} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: activeTab === 'settings' ? '#6366f1' : 'rgba(255,255,255,0.04)', color: '#fff', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            ⚙️ Settings
+          </button>
+        </div>
+
         {loading && !analytics && activeTab === 'overview' ? (
           <div className="skeleton-grid-wrapper">
             <div className="metrics-cards-grid">
