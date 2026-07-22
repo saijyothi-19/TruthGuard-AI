@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db, close_db, get_db
-from app.routes import auth, scans, lists, whatsapp, feedback
+from app.routes import auth, scans, lists, whatsapp, feedback, notifications
 import logging
 
 # Configure logger
