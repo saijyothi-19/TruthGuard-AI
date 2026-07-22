@@ -56,12 +56,16 @@ def send_email_via_brevo(to_email: str, subject: str, html_body: str) -> bool:
         return False
         
     try:
+        from_email = settings.smtp_from if settings.smtp_from else settings.smtp_user
+        if not from_email:
+            from_email = "truthguardai22@gmail.com"
+            
         headers = {
             "api-key": settings.brevo_api_key,
             "Content-Type": "application/json"
         }
         payload = {
-            "sender": {"name": "TruthGuard AI Security", "email": "truthguardai22@gmail.com"},
+            "sender": {"name": "TruthGuard AI Security", "email": from_email},
             "to": [{"email": to_email}],
             "subject": subject,
             "htmlContent": html_body
