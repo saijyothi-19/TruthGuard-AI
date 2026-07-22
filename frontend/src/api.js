@@ -2,8 +2,8 @@ import axios from 'axios';
 
 const getApiUrl = () => {
   let url = import.meta.env.VITE_API_URL;
-  if (url && typeof url === 'string' && url.trim() !== '') {
-    url = url.trim().replace(/\/+$/, ''); // Remove trailing slashes
+  if (url && typeof url === 'string' && url.trim().startsWith('http')) {
+    url = url.trim().replace(/\/+$/, '');
     if (url.endsWith('/api/auth')) {
       url = url.substring(0, url.length - 5);
     }
