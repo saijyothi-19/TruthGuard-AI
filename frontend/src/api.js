@@ -2,23 +2,17 @@ import axios from 'axios';
 
 const getApiUrl = () => {
   let url = import.meta.env.VITE_API_URL;
-  if (url) {
-    // Automatically append /api if the user forgot it in their Vercel configuration
-    if (!url.endsWith('/api') && !url.endsWith('/api/')) {
-      url = url.endsWith('/') ? `${url}api` : `${url}/api`;
+  if (url && typeof url === 'string' && url.trim() !== '') {
+    url = url.trim().replace(/\/+$/, ''); // Remove trailing slashes
+    if (url.endsWith('/api/auth')) {
+      url = url.substring(0, url.length - 5);
+    }
+    if (!url.endsWith('/api')) {
+      url = `${url}/api`;
     }
     return url;
   }
-  if (window.location.hostname.includes('serveousercontent.com')) {
-    return 'https://222841ce14e2c960-49-204-104-29.serveousercontent.com/api';
-  }
-  if (window.location.protocol === 'https:') {
-    return 'https://truthguard-ai-production-cefd.up.railway.app/api';
-  }
-  if (window.location.hostname !== 'localhost') {
-    return `http://${window.location.hostname}:8000/api`;
-  }
-  return 'http://localhost:8000/api';
+  return 'https://truthguard-ai-production-cefd.up.railway.app/api';
 };
 
 const API_URL = getApiUrl();
