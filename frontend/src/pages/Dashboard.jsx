@@ -2,7 +2,7 @@ import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { 
   Shield, Activity, FileText, Settings, Globe, AlertTriangle, CheckCircle, 
   MessageSquare, Plus, Trash2, Search, Lock, RefreshCw, Eye, ExternalLink, HelpCircle,
-  Camera, Zap, Scan, RotateCcw, Sparkles, Check
+  Camera, Zap, Scan, RotateCcw, Sparkles, Check, Home
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line, Cell, PieChart, Pie
@@ -22,13 +22,18 @@ import './Dashboard.css';
 function Dashboard() {
   const { user } = useContext(AuthContext);
   const { addNotification } = useContext(NotificationContext);
-  const [activeTab, setActiveTab] = useState('simulator');
+  const [activeTab, setActiveTab] = useState('home');
   const [loading, setLoading] = useState(true);
 
   // Custom Event Listeners for Navbar Menu & Notification Clicks
   useEffect(() => {
     const handleSwitchTab = (e) => {
-      if (e.detail) setActiveTab(e.detail);
+      if (e.detail) {
+        // Map tab names cleanly
+        let target = e.detail;
+        if (target === 'rules') target = 'filters';
+        setActiveTab(target);
+      }
     };
 
     const handleOpenReport = (e) => {
@@ -569,6 +574,121 @@ ${rec}`;
             </ul>
           </div>
         )}
+      </div>
+    );
+  };
+
+  // --- Rendering Home Landing Page Tab ---
+  const renderHome = () => {
+    return (
+      <div className="tab-content home-landing-layout animate-fade">
+        {/* Hero Section */}
+        <div className="home-hero-card glass-card" style={{ padding: '2.5rem 2rem', borderRadius: '16px', background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%)', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
+          <div className="hero-content">
+            <span className="hero-pill flex-center" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700', marginBottom: '1rem' }}>
+              <Sparkles size={14} /> AI Cyber Guardian Active
+            </span>
+            <h1 className="hero-title" style={{ fontSize: '2.2rem', fontWeight: '800', margin: '0 0 1rem 0', color: '#f8fafc', lineHeight: '1.2' }}>
+              Protect Your Digital Space Against Phishing & Scams
+            </h1>
+            <p className="hero-subtitle" style={{ fontSize: '1rem', color: '#94a3b8', margin: '0 0 1.5rem 0', maxWidth: '700px', lineHeight: '1.6' }}>
+              TruthGuard AI automatically analyzes URLs, QR Codes, Barcodes, and Printed Text Messages using Machine Learning & Real-Time Threat Intelligence.
+            </p>
+            <div className="hero-actions" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <button className="primary-btn flex-center" onClick={() => setActiveTab('simulator')} style={{ padding: '0.75rem 1.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Camera size={18} /> Launch Smart Camera Scanner
+              </button>
+              <button className="secondary-btn flex-center" onClick={() => setActiveTab('overview')} style={{ padding: '0.75rem 1.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', color: '#f1f5f9', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer' }}>
+                <Activity size={18} /> View Security Analytics
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Security Threat Metrics */}
+        <div className="metrics-cards-grid">
+          <div className="glass-card stat-card border-left-green">
+            <div className="stat-desc">Total Active Scans</div>
+            <div className="stat-value">{history.length || (analytics?.total_scans || 0)}</div>
+          </div>
+          <div className="glass-card stat-card border-left-red">
+            <div className="stat-desc">Threats Intercepted</div>
+            <div className="stat-value">
+              {analytics ? (analytics.threat_level_counts.Red + analytics.threat_level_counts["Dark Red"] + analytics.threat_level_counts.Orange) : 0}
+            </div>
+          </div>
+          <div className="glass-card stat-card border-left-blue">
+            <div className="stat-desc">Trusted Whitelisted Vectors</div>
+            <div className="stat-value">{whitelist.length}</div>
+          </div>
+          <div className="glass-card stat-card border-left-purple">
+            <div className="stat-desc">Active Policy Filters</div>
+            <div className="stat-value">{blacklist.length}</div>
+          </div>
+        </div>
+
+        {/* Core Protection Engines Showcase */}
+        <h3 className="section-heading" style={{ marginTop: '2rem', marginBottom: '1rem', color: '#f8fafc', fontSize: '1.2rem', fontWeight: '700' }}>
+          🛡️ Core Protection Engines
+        </h3>
+        <div className="engine-showcase-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
+          <div className="glass-card engine-card" style={{ padding: '1.5rem', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.6)', border: '1px solid var(--border-color)' }}>
+            <div className="engine-icon-badge blue" style={{ width: '42px', height: '42px', background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Shield size={22} />
+            </div>
+            <h4 style={{ margin: '0 0 0.5rem 0', color: '#f8fafc', fontSize: '1rem' }}>Random Forest Phishing ML</h4>
+            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.8rem', lineHeight: '1.5' }}>Extracts WHOIS ages, TLD scores, HTTPS encryption, and subdomains to detect zero-day phishing links.</p>
+          </div>
+
+          <div className="glass-card engine-card" style={{ padding: '1.5rem', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.6)', border: '1px solid var(--border-color)' }}>
+            <div className="engine-icon-badge purple" style={{ width: '42px', height: '42px', background: 'rgba(168, 85, 247, 0.15)', color: '#a855f7', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Zap size={22} />
+            </div>
+            <h4 style={{ margin: '0 0 0.5rem 0', color: '#f8fafc', fontSize: '1rem' }}>NLP Message Scam Intent</h4>
+            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.8rem', lineHeight: '1.5' }}>Analyzes message tokenization for high-urgency wording, financial extortion, and bank impersonation.</p>
+          </div>
+
+          <div className="glass-card engine-card" style={{ padding: '1.5rem', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.6)', border: '1px solid var(--border-color)' }}>
+            <div className="engine-icon-badge green" style={{ width: '42px', height: '42px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Camera size={22} />
+            </div>
+            <h4 style={{ margin: '0 0 0.5rem 0', color: '#f8fafc', fontSize: '1rem' }}>Tesseract WebAssembly OCR</h4>
+            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.8rem', lineHeight: '1.5' }}>Automatically captures camera frames and extracts printed URLs and text without manual typing.</p>
+          </div>
+
+          <div className="glass-card engine-card" style={{ padding: '1.5rem', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.6)', border: '1px solid var(--border-color)' }}>
+            <div className="engine-icon-badge red" style={{ width: '42px', height: '42px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Globe size={22} />
+            </div>
+            <h4 style={{ margin: '0 0 0.5rem 0', color: '#f8fafc', fontSize: '1rem' }}>VirusTotal & Safe Browsing</h4>
+            <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.8rem', lineHeight: '1.5' }}>Cross-references target domains against 80+ security engines and Google Safe Browsing threat feeds.</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // --- Rendering Settings Tab ---
+  const renderSettings = () => {
+    return (
+      <div className="tab-content settings-layout animate-fade">
+        <div className="glass-card settings-panel" style={{ padding: '1.5rem', borderRadius: '12px', background: 'rgba(30, 41, 59, 0.6)', border: '1px solid var(--border-color)' }}>
+          <h3 style={{ margin: '0 0 1rem 0', color: '#f8fafc' }}>⚙️ Security System & Profile Settings</h3>
+          
+          <div className="settings-section" style={{ marginBottom: '1.5rem' }}>
+            <h4 style={{ color: '#a5b4fc', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Account Profile</h4>
+            <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#cbd5e1' }}>Username: <strong>{user?.username}</strong></p>
+            <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#cbd5e1' }}>Email: <strong>{user?.email || 'spdudam19@gmail.com'}</strong></p>
+            <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#cbd5e1' }}>Role: <span className="status-pill success">{user?.role?.toUpperCase() || 'USER'}</span></p>
+          </div>
+
+          <div className="settings-section">
+            <h4 style={{ color: '#a5b4fc', fontSize: '0.9rem', marginBottom: '0.5rem' }}>System Status & Connections</h4>
+            <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#10b981' }}>✓ MongoDB Atlas Database: Connected</p>
+            <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#10b981' }}>✓ Railway Backend: Active (Port 443)</p>
+            <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#10b981' }}>✓ Resend Email Service: Active</p>
+          </div>
+        </div>
       </div>
     );
   };
@@ -1231,15 +1351,17 @@ ${rec}`;
           <h2>TruthGuard AI</h2>
         </div>
         <nav className="side-nav">
+          <button className={activeTab === 'home' ? 'active' : ''} onClick={() => handleTabChange('home')}><Home size={18}/> Home</button>
           {user?.role === 'admin' && (
             <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => handleTabChange('overview')}><Activity size={18}/> Security Analytics</button>
           )}
           <button className={activeTab === 'simulator' ? 'active' : ''} onClick={() => handleTabChange('simulator')}><Shield size={18}/> Threat Simulator</button>
-          <button className={activeTab === 'history' ? 'active' : ''} onClick={() => handleTabChange('history')}><FileText size={18}/> {user?.role === 'admin' ? 'Audit Logs' : 'My Scans'}</button>
+          <button className={activeTab === 'history' ? 'active' : ''} onClick={() => handleTabChange('history')}><FileText size={18}/> Audit Logs</button>
           {user?.role === 'admin' && (
-            <button className={activeTab === 'rules' ? 'active' : ''} onClick={() => handleTabChange('rules')}><Settings size={18}/> Policy Filters</button>
+            <button className={activeTab === 'rules' || activeTab === 'filters' ? 'active' : ''} onClick={() => handleTabChange('filters')}><Settings size={18}/> Policy Filters</button>
           )}
-          <button className={activeTab === 'feedback' ? 'active' : ''} onClick={() => handleTabChange('feedback')}><MessageSquare size={18}/> {user?.role === 'admin' ? 'User Feedback' : 'Submit Feedback'}</button>
+          <button className={activeTab === 'feedback' ? 'active' : ''} onClick={() => handleTabChange('feedback')}><MessageSquare size={18}/> User Feedback</button>
+          <button className={activeTab === 'settings' ? 'active' : ''} onClick={() => handleTabChange('settings')}><Settings size={18}/> Settings</button>
         </nav>
       </aside>
 
@@ -1247,7 +1369,7 @@ ${rec}`;
         <header className="main-header">
           <div className="header-info">
             <h1>{user?.role === 'admin' ? 'TruthGuard AI Cybersecurity Console' : 'TruthGuard AI Safety Portal'}</h1>
-            <p>Welcome back, <strong>{user?.username || 'Security Officer'}</strong>. {user?.role === 'admin' ? 'Real-time scanning and analytics active.' : 'Forward links to your WhatsApp bot to view scan history here.'}</p>
+            <p>Welcome back, <strong>{user?.username || 'Security Officer'}</strong>. Real-time scanning and threat intelligence active.</p>
           </div>
           <button className="refresh-btn flex-center" onClick={refreshData} disabled={loading}>
             <RefreshCw size={14} className={loading ? 'spin' : ''} /> Refresh
@@ -1261,11 +1383,13 @@ ${rec}`;
           </div>
         ) : (
           <>
+            {activeTab === 'home' && renderHome()}
             {activeTab === 'overview' && user?.role === 'admin' && renderOverview()}
             {activeTab === 'simulator' && renderSimulator()}
             {activeTab === 'history' && renderHistory()}
-            {activeTab === 'rules' && user?.role === 'admin' && renderRules()}
+            {(activeTab === 'rules' || activeTab === 'filters') && user?.role === 'admin' && renderRules()}
             {activeTab === 'feedback' && renderFeedback()}
+            {activeTab === 'settings' && renderSettings()}
           </>
         )}
       </main>

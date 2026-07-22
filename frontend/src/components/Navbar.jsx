@@ -43,49 +43,21 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const [currentTab, setCurrentTab] = useState('home');
+
   const handleMenuTabClick = (tabName) => {
+    setCurrentTab(tabName);
     setShowMobileMenu(false);
     navigate('/');
     // Dispatch custom event so Dashboard switches to target tab
     window.dispatchEvent(new CustomEvent('switchDashboardTab', { detail: tabName }));
   };
 
-  const handleNotifClick = (notif) => {
-    markAsRead(notif.id);
-    setShowNotifPanel(false);
-    if (notif.resultData) {
-      navigate('/');
-      window.dispatchEvent(new CustomEvent('openScanReport', { detail: notif.resultData }));
-    }
-  };
-
-  const formatTimeAgo = (isoString) => {
-    try {
-      const diff = Math.floor((new Date() - new Date(isoString)) / 1000);
-      if (diff < 30) return 'Just now';
-      if (diff < 60) return `${diff}s ago`;
-      if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-      if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-      return `${Math.floor(diff / 86400)}d ago`;
-    } catch {
-      return 'Recently';
-    }
-  };
-
   return (
     <>
       <nav className="navbar">
         <div className="nav-left flex-center" style={{ gap: '1rem' }}>
-          {/* Hamburger Menu Button (☰) */}
-          <button 
-            className="hamburger-btn" 
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            title="Toggle Navigation Menu"
-          >
-            {showMobileMenu ? <X size={22} /> : <Menu size={22} />}
-          </button>
-
-          <Link to="/" className="nav-brand flex-center" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <Link to="/" onClick={() => handleMenuTabClick('home')} className="nav-brand flex-center" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
             <Shield size={22} style={{ color: 'var(--primary-color)', marginRight: '0.5rem', filter: 'drop-shadow(0 0 6px rgba(99, 102, 241, 0.4))' }} />
             <span className="nav-brand-text" style={{ fontSize: '1.2rem', fontStyle: 'normal' }}>
               TruthGuard AI
@@ -93,7 +65,7 @@ const Navbar = () => {
           </Link>
         </div>
 
-        <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {/* Notification Bell Icon (🔔) */}
           {user && (
             <div className="notif-wrapper" style={{ position: 'relative' }}>
@@ -168,52 +140,72 @@ const Navbar = () => {
             {theme === 'dark' ? <Sun size={20} style={{ color: '#fbbf24' }} /> : <Moon size={20} style={{ color: '#6366f1' }} />}
           </button>
 
-          {/* User Status / Auth Buttons */}
-          {user ? (
-            <div className="user-profile-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span className="nav-user" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                {user.role === 'admin' ? 'Admin: ' : 'User: '} <strong style={{ color: 'var(--text-color, #f8fafc)' }}>{user.username}</strong>
-              </span>
-              <button onClick={handleLogout} className="logout-btn">
-                Sign Out
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <Link to="/login" className="nav-link">Sign In</Link>
-              <Link to="/register" className="nav-link">Sign Up</Link>
-            </div>
-          )}
+          {/* Hamburger Menu Button (☰) */}
+          <button 
+            className="hamburger-btn" 
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            title="Open Navigation Drawer"
+            style={{ background: 'var(--primary-color)', color: '#fff', border: 'none' }}
+          >
+            {showMobileMenu ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
       </nav>
 
-      {/* Hamburger Mobile/Desktop Drawer Overlay */}
+      {/* Responsive Side Navigation Drawer Overlay */}
       {showMobileMenu && (
         <div className="mobile-drawer-overlay animate-fade" onClick={() => setShowMobileMenu(false)}>
           <div className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="drawer-header">
-              <h3>Navigation Menu</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Shield size={20} style={{ color: 'var(--primary-color)' }} />
+                <h3 style={{ margin: 0, fontSize: '1rem', color: '#f8fafc' }}>TruthGuard Navigation</h3>
+              </div>
               <button onClick={() => setShowMobileMenu(false)} className="icon-btn">
                 <X size={20} />
               </button>
             </div>
             
             <div className="drawer-menu-list">
-              <button className="drawer-item" onClick={() => handleMenuTabClick('overview')}>
+              <button className={`drawer-item ${currentTab === 'home' ? 'active' : ''}`} onClick={() => handleMenuTabClick('home')}>
+                🏠 Home
+              </button>
+              <button className={`drawer-item ${currentTab === 'overview' ? 'active' : ''}`} onClick={() => handleMenuTabClick('overview')}>
                 <Activity size={18} /> Security Analytics
               </button>
-              <button className="drawer-item" onClick={() => handleMenuTabClick('simulator')}>
+              <button className={`drawer-item ${currentTab === 'simulator' ? 'active' : ''}`} onClick={() => handleMenuTabClick('simulator')}>
                 <Zap size={18} /> Threat Simulator
               </button>
-              <button className="drawer-item" onClick={() => handleMenuTabClick('history')}>
+              <button className={`drawer-item ${currentTab === 'history' ? 'active' : ''}`} onClick={() => handleMenuTabClick('history')}>
                 <FileText size={18} /> Audit Logs
               </button>
-              <button className="drawer-item" onClick={() => handleMenuTabClick('filters')}>
+              <button className={`drawer-item ${currentTab === 'filters' || currentTab === 'rules' ? 'active' : ''}`} onClick={() => handleMenuTabClick('filters')}>
                 <Settings size={18} /> Policy Filters
               </button>
-              <button className="drawer-item" onClick={() => handleMenuTabClick('feedback')}>
+              <button className={`drawer-item ${currentTab === 'feedback' ? 'active' : ''}`} onClick={() => handleMenuTabClick('feedback')}>
                 <MessageSquare size={18} /> User Feedback
               </button>
+              <button className={`drawer-item ${currentTab === 'settings' ? 'active' : ''}`} onClick={() => handleMenuTabClick('settings')}>
+                ⚙️ Settings
+              </button>
+            </div>
+
+            <div className="drawer-footer" style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              {user ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                    Logged in: <strong style={{ color: '#f8fafc' }}>{user.username}</strong>
+                  </span>
+                  <button onClick={handleLogout} className="logout-btn" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}>
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <Link to="/login" onClick={() => setShowMobileMenu(false)} className="primary-btn flex-center w-full" style={{ padding: '0.5rem', textAlign: 'center', textDecoration: 'none' }}>Sign In</Link>
+                  <Link to="/register" onClick={() => setShowMobileMenu(false)} className="secondary-btn flex-center w-full" style={{ padding: '0.5rem', textAlign: 'center', textDecoration: 'none', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px' }}>Sign Up</Link>
+                </div>
+              )}
             </div>
           </div>
         </div>

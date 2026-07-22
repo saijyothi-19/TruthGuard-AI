@@ -436,6 +436,13 @@ body.light-mode .error-message {
   border-color: var(--primary-color);
 }
 
+.drawer-item.active {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #4f46e5 100%);
+  color: white;
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+}
+
 /* Floating Toast Notification Alert */
 .floating-toast {
   position: fixed;
