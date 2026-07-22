@@ -118,12 +118,6 @@ async def get_report(scan_id: str, current_user: dict = Depends(get_current_user
 
 @router.get("/analytics", response_model=AnalyticsResponse)
 async def get_analytics(current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Admin role required for global analytics."
-        )
-        
     db = await get_db()
     if db is None:
         raise HTTPException(status_code=500, detail="Database connection not available")
