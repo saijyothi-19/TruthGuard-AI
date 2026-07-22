@@ -56,6 +56,24 @@ const Navbar = () => {
     window.dispatchEvent(new CustomEvent('switchDashboardTab', { detail: tabName }));
   };
 
+  const handleNotifClick = (n) => {
+    markAsRead(n.id);
+    setShowNotifPanel(false);
+    if (n.resultData) {
+      window.dispatchEvent(new CustomEvent('openScanReport', { detail: n.resultData }));
+    }
+  };
+
+  const formatTimeAgo = (isoString) => {
+    if (!isoString) return 'Just now';
+    const date = new Date(isoString);
+    const seconds = Math.floor((new Date() - date) / 1000);
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+  };
+
   return (
     <>
       <nav className="navbar">
@@ -81,13 +99,12 @@ const Navbar = () => {
 
         <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {/* Notification Bell Icon (🔔) */}
-          {user && (
-            <div className="notif-wrapper" style={{ position: 'relative' }}>
-              <button 
-                className="icon-btn notif-bell-btn" 
-                onClick={() => setShowNotifPanel(!showNotifPanel)}
-                title="Notifications"
-              >
+          <div className="notif-wrapper" style={{ position: 'relative' }}>
+            <button 
+              className="icon-btn notif-bell-btn" 
+              onClick={() => setShowNotifPanel(!showNotifPanel)}
+              title="Notifications"
+            >
                 <Bell size={20} />
                 {unreadCount > 0 && (
                   <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
@@ -143,7 +160,6 @@ const Navbar = () => {
                 </div>
               )}
             </div>
-          )}
 
           {/* Dark / Light Theme Toggle */}
           <button 

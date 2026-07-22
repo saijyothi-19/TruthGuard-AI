@@ -78,6 +78,7 @@ app.include_router(scans.router, prefix="/api")
 app.include_router(lists.router, prefix="/api")
 app.include_router(whatsapp.router, prefix="/api")
 app.include_router(feedback.router, prefix="/api")
+app.include_router(notifications.router, prefix="/api")
 
 @app.get("/")
 async def root():

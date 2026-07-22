@@ -142,4 +142,49 @@ export const logoutUser = async () => {
   }
 };
 
+export const getNotifications = async () => {
+  try {
+    const response = await api.get('/notifications');
+    return response.data;
+  } catch (e) {
+    return [];
+  }
+};
+
+export const createNotificationApi = async (title, message, resultData) => {
+  try {
+    const response = await api.post('/notifications', { title, message, resultData });
+    return response.data;
+  } catch (e) {
+    return null;
+  }
+};
+
+export const markNotificationReadApi = async (id) => {
+  try {
+    const response = await api.put(`/notifications/${id}/read`);
+    return response.data;
+  } catch (e) {
+    return { status: 'ok' };
+  }
+};
+
+export const markAllNotificationsReadApi = async () => {
+  try {
+    const response = await api.put('/notifications/read-all');
+    return response.data;
+  } catch (e) {
+    return { status: 'ok' };
+  }
+};
+
+export const clearNotificationsApi = async () => {
+  try {
+    const response = await api.delete('/notifications');
+    return response.data;
+  } catch (e) {
+    return { status: 'ok' };
+  }
+};
+
 export default api;

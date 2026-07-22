@@ -1,4 +1,11 @@
 import { createContext, useState, useEffect, useCallback } from 'react';
+import { 
+  getNotifications, 
+  createNotificationApi, 
+  markNotificationReadApi, 
+  markAllNotificationsReadApi, 
+  clearNotificationsApi 
+} from '../api';
 
 export const NotificationContext = createContext();
 
@@ -13,6 +20,22 @@ export const NotificationProvider = ({ children }) => {
   });
 
   const [activeToast, setActiveToast] = useState(null);
+
+  // Sync notifications from backend DB on load
+  const syncFromDb = useCallback(async () => {
+    try {
+      const dbNotifs = await getNotifications();
+      if (Array.isArray(dbNotifs) && dbNotifs.length > 0) {
+        setNotifications(dbNotifs);
+      }
+    } catch (e) {
+      console.log("Could not sync notifications from DB:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    syncFromDb();
+  }, [syncFromDb]);
 
   useEffect(() => {
     try {
@@ -35,6 +58,9 @@ export const NotificationProvider = ({ children }) => {
     setNotifications(prev => [newNotif, ...prev]);
     setActiveToast(newNotif);
 
+    // Save to DB asynchronously
+    createNotificationApi(newNotif.title, newNotif.message, resultData);
+
     // Auto-dismiss toast after 4.5 seconds
     setTimeout(() => {
       setActiveToast(prev => (prev?.id === newNotif.id ? null : prev));
@@ -45,15 +71,18 @@ export const NotificationProvider = ({ children }) => {
     setNotifications(prev =>
       prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
     );
+    markNotificationReadApi(id);
   }, []);
 
   const markAllAsRead = useCallback(() => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    markAllNotificationsReadApi();
   }, []);
 
   const clearNotifications = useCallback(() => {
     setNotifications([]);
     setActiveToast(null);
+    clearNotificationsApi();
   }, []);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -68,7 +97,8 @@ export const NotificationProvider = ({ children }) => {
         addNotification,
         markAsRead,
         markAllAsRead,
-        clearNotifications
+        clearNotifications,
+        syncFromDb
       }}
     >
       {children}
