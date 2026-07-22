@@ -8,6 +8,25 @@
     <meta name="theme-color" content="#0f172a" />
     <meta name="description" content="TruthGuard AI - Cyber Security Guardian against Phishing and Scams" />
     <title>TruthGuard AI - Cyber Security Guardian</title>
+    <script>
+      // Automatically unregister all Service Workers to prevent stale JS bundle hash locks
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (let registration of registrations) {
+            registration.unregister();
+            console.log('Stale PWA Service Worker unregistered.');
+          }
+        });
+      }
+      // Force clear all CacheStorage entries
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (let name of names) {
+            caches.delete(name);
+          }
+        });
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
