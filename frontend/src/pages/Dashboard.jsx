@@ -148,7 +148,7 @@ function Dashboard({ defaultTab = 'home' }) {
       const isAdmin = user?.role === 'admin';
       
       const fetchHistory = getScanHistory(30).catch(() => ({ scans: [], total: 0 }));
-      const fetchAnalytics = isAdmin ? getAnalytics().catch(() => null) : Promise.resolve(null);
+      const fetchAnalytics = getAnalytics().catch(() => null);
       const fetchBlacklist = isAdmin ? getBlacklist().catch(() => []) : Promise.resolve([]);
       const fetchWhitelist = isAdmin ? getWhitelist().catch(() => []) : Promise.resolve([]);
 
