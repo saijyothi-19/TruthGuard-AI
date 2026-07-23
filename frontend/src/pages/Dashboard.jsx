@@ -15,6 +15,7 @@ import ParticleBackground from '../components/ParticleBackground';
 import { SkeletonCard, SkeletonChart, SkeletonTable } from '../components/SkeletonLoader';
 import DangerousUrlModal from '../components/DangerousUrlModal';
 import SecurityChatWidget from '../components/SecurityChatWidget';
+import WhatsAppSandboxCard from '../components/WhatsAppSandboxCard';
 import { exportToPDF, exportToCSV, exportToJSON } from '../utils/exportUtils';
 import { safeLocalStorage } from '../utils/storage';
 import { 

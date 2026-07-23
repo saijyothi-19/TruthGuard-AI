@@ -7,6 +7,7 @@ const ParticleBackground = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     let animationFrameId;
 
     let width = (canvas.width = window.innerWidth);
