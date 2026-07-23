@@ -16,6 +16,7 @@ import { SkeletonCard, SkeletonChart, SkeletonTable } from '../components/Skelet
 import DangerousUrlModal from '../components/DangerousUrlModal';
 import SecurityChatWidget from '../components/SecurityChatWidget';
 import { exportToPDF, exportToCSV, exportToJSON } from '../utils/exportUtils';
+import { safeLocalStorage } from '../utils/storage';
 import { 
   getAnalytics, getScanHistory, scanUrl, scanMessage, 
   getBlacklist, addToBlacklist, deleteFromBlacklist,
@@ -48,7 +49,7 @@ function Dashboard({ defaultTab = 'home' }) {
       return normalized;
     }
 
-    const tabFromStorage = localStorage.getItem('truthguard_active_tab');
+    const tabFromStorage = safeLocalStorage.getItem('truthguard_active_tab');
     if (tabFromStorage) return tabFromStorage === 'rules' ? 'filters' : tabFromStorage;
     return defaultTab || 'home';
   };
@@ -64,7 +65,7 @@ function Dashboard({ defaultTab = 'home' }) {
         let target = e.detail;
         if (target === 'rules') target = 'filters';
         setActiveTab(target);
-        localStorage.setItem('truthguard_active_tab', target);
+        safeLocalStorage.setItem('truthguard_active_tab', target);
         setSearchParams({ tab: target }, { replace: true });
       }
     };
@@ -72,7 +73,7 @@ function Dashboard({ defaultTab = 'home' }) {
     const handleOpenReport = (e) => {
       if (e.detail) {
         setActiveTab('simulator');
-        localStorage.setItem('truthguard_active_tab', 'simulator');
+        safeLocalStorage.setItem('truthguard_active_tab', 'simulator');
         setSearchParams({ tab: 'simulator' }, { replace: true });
         setScanResult(e.detail);
       }
@@ -103,7 +104,7 @@ function Dashboard({ defaultTab = 'home' }) {
     let target = tabName;
     if (target === 'rules') target = 'filters';
     setActiveTab(target);
-    localStorage.setItem('truthguard_active_tab', target);
+    safeLocalStorage.setItem('truthguard_active_tab', target);
     setSearchParams({ tab: target }, { replace: true });
     if (target === 'feedback' && user?.role === 'admin') {
       loadFeedback();

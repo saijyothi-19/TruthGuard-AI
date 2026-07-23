@@ -19,13 +19,15 @@ const decodeToken = (token) => {
   }
 };
 
+import { safeLocalStorage } from '../utils/storage';
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('truthguard_token');
+    const storedToken = safeLocalStorage.getItem('truthguard_token');
     if (storedToken) {
       const decoded = decodeToken(storedToken);
       // Validate expiration
@@ -33,14 +35,14 @@ export const AuthProvider = ({ children }) => {
         setToken(storedToken);
         setUser({ username: decoded.sub, role: decoded.role || 'user' });
       } else {
-        localStorage.removeItem('truthguard_token');
+        safeLocalStorage.removeItem('truthguard_token');
       }
     }
     setLoading(false);
   }, []);
 
   const login = (accessToken) => {
-    localStorage.setItem('truthguard_token', accessToken);
+    safeLocalStorage.setItem('truthguard_token', accessToken);
     const decoded = decodeToken(accessToken);
     setToken(accessToken);
     setUser({ 
@@ -55,10 +57,10 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       // Ignore network errors during logout
     }
-    const theme = localStorage.getItem('theme');
-    localStorage.clear();
+    const theme = safeLocalStorage.getItem('theme');
+    safeLocalStorage.clear();
     sessionStorage.clear();
-    if (theme) localStorage.setItem('theme', theme);
+    if (theme) safeLocalStorage.setItem('theme', theme);
 
     setUser(null);
     setToken(null);

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { safeLocalStorage } from './utils/storage';
 
 const getApiUrl = () => {
   // 1. Try VITE_API_URL from environment variables
@@ -32,7 +33,7 @@ const api = axios.create({
 // Interceptor to inject JWT Bearer Token into headers
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('truthguard_token');
+    const token = safeLocalStorage.getItem('truthguard_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

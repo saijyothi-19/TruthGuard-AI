@@ -9,10 +9,12 @@ import {
 
 export const NotificationContext = createContext();
 
+import { safeLocalStorage } from '../utils/storage';
+
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState(() => {
     try {
-      const saved = localStorage.getItem('truthguard_notifications');
+      const saved = safeLocalStorage.getItem('truthguard_notifications');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -39,7 +41,7 @@ export const NotificationProvider = ({ children }) => {
 
   useEffect(() => {
     try {
-      localStorage.setItem('truthguard_notifications', JSON.stringify(notifications.slice(0, 50)));
+      safeLocalStorage.setItem('truthguard_notifications', JSON.stringify(notifications.slice(0, 50)));
     } catch (err) {
       console.error("Failed to save notifications to localStorage", err);
     }

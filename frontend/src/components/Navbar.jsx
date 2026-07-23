@@ -7,6 +7,8 @@ import {
   Activity, Zap, FileText, Settings, MessageSquare, ExternalLink, AlertTriangle
 } from 'lucide-react';
 
+import { safeLocalStorage } from '../utils/storage';
+
 const Navbar = () => {
   const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext);
@@ -21,7 +23,7 @@ const Navbar = () => {
     addNotification
   } = useContext(NotificationContext);
 
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+  const [theme, setTheme] = useState(safeLocalStorage.getItem('theme') || 'dark');
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -36,7 +38,7 @@ const Navbar = () => {
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
-    localStorage.setItem('theme', nextTheme);
+    safeLocalStorage.setItem('theme', nextTheme);
   };
 
   const handleLogout = async () => {
