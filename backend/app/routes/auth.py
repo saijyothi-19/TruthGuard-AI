@@ -24,6 +24,8 @@ class LoginResponse(BaseModel):
     status: str
     username: str
     message: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
 
 class VerifyLoginOTPRequest(BaseModel):
     username: str
@@ -139,26 +141,37 @@ async def register(user_data: UserRegister, background_tasks: BackgroundTasks):
             detail="Username already registered"
         )
         
-    existing_email = await db.users.find_one({"email": user_data.email})
+    normalized_email = user_data.email.strip().lower()
+    existing_email = await db.users.find_one({"email": normalized_email})
     if existing_email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
 
-    # Clean up any existing unverified registrations in temp_users
-    await db.temp_users.delete_many({
-        "$or": [
-            {"username": user_data.username},
-            {"email": user_data.email}
-        ]
-    })
-        
     cleaned_phone = None
     if user_data.phone:
         cleaned_phone = "".join(c for c in user_data.phone if c.isdigit() or c == "+")
         if not cleaned_phone.strip():
             cleaned_phone = None
+
+    if cleaned_phone:
+        existing_phone = await db.users.find_one({"phone": cleaned_phone})
+        if existing_phone:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Phone number already registered to another account"
+            )
+
+    # Clean up any existing unverified registrations in temp_users
+    or_filters = [
+        {"username": user_data.username},
+        {"email": normalized_email}
+    ]
+    if cleaned_phone:
+        or_filters.append({"phone": cleaned_phone})
+        
+    await db.temp_users.delete_many({"$or": or_filters})
 
     # Determine role (sai1234 or first registered user is admin)
     user_count = await db.users.count_documents({})
@@ -175,7 +188,7 @@ async def register(user_data: UserRegister, background_tasks: BackgroundTasks):
     hashed_pwd = hash_password(user_data.password)
     user_doc = {
         "username": user_data.username,
-        "email": user_data.email,
+        "email": normalized_email,
         "phone": cleaned_phone,
         "password_hash": hashed_pwd,
         "role": role,
@@ -192,15 +205,20 @@ async def register(user_data: UserRegister, background_tasks: BackgroundTasks):
         result = await db.temp_users.insert_one(user_doc)
         
         # Dispatch verification codes in background
-        background_tasks.add_task(send_email_otp, user_data.email, email_otp)
+        background_tasks.add_task(send_email_otp, normalized_email, email_otp)
         if cleaned_phone:
             background_tasks.add_task(send_phone_otp, cleaned_phone, phone_otp)
+            
+        msg = f"OTP sent to your email: {normalized_email}"
+        if cleaned_phone:
+            msg += f" and OTP sent to your WhatsApp: {cleaned_phone}"
             
         return {
             "id": str(result.inserted_id),
             "username": user_data.username,
-            "email": user_data.email,
-            "phone": cleaned_phone
+            "email": normalized_email,
+            "phone": cleaned_phone,
+            "message": msg
         }
     except Exception as e:
         logger.error(f"Error registering user: {e}")
@@ -317,12 +335,19 @@ async def login(credentials: UserLogin, background_tasks: BackgroundTasks):
         
         # Send codes in background
         background_tasks.add_task(send_email_otp, user["email"], email_otp)
-        background_tasks.add_task(send_phone_otp, user["phone"], phone_otp)
-        
+        if user.get("phone"):
+            background_tasks.add_task(send_phone_otp, user["phone"], phone_otp)
+            
+        msg = f"OTP sent to your email: {user['email']}"
+        if user.get("phone"):
+            msg += f" and OTP sent to your WhatsApp: {user['phone']}"
+            
         return {
             "status": "requires_otp",
             "username": user["username"],
-            "message": "Verification codes sent to your registered email and WhatsApp."
+            "email": user["email"],
+            "phone": user.get("phone"),
+            "message": msg
         }
     except Exception as e:
         logger.error(f"Error initiating login MFA: {e}")
@@ -476,7 +501,10 @@ async def resend_otp(payload: ResendOTPPayload, background_tasks: BackgroundTask
         if temp_user.get("phone"):
             background_tasks.add_task(send_phone_otp, temp_user["phone"], new_phone_otp)
 
-        return {"status": "success", "message": f"A new OTP code has been sent to {temp_user['email']}"}
+        msg = f"OTP sent to your email: {temp_user['email']}"
+        if temp_user.get("phone"):
+            msg += f" and OTP sent to your WhatsApp: {temp_user['phone']}"
+        return {"status": "success", "message": msg}
 
     # Search in users (login mode)
     user = await db.users.find_one({"username": payload.username})
@@ -498,7 +526,10 @@ async def resend_otp(payload: ResendOTPPayload, background_tasks: BackgroundTask
         if user.get("phone"):
             background_tasks.add_task(send_phone_otp, user["phone"], new_phone_otp)
 
-        return {"status": "success", "message": f"A new OTP code has been sent to {user['email']}"}
+        msg = f"OTP sent to your email: {user['email']}"
+        if user.get("phone"):
+            msg += f" and OTP sent to your WhatsApp: {user['phone']}"
+        return {"status": "success", "message": msg}
 
     raise HTTPException(status_code=404, detail="User account not found.")
 

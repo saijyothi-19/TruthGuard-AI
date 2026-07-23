@@ -131,7 +131,11 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
         threat_level_counts = {"Green": 0, "Yellow": 0, "Orange": 0, "Red": 0, "Dark Red": 0}
         source_counts = {"whatsapp": 0, "dashboard": 0}
         
-        cursor = db.scan_history.find()
+        query = {}
+        if current_user.get("role") != "admin":
+            query = {"username": current_user["username"]}
+
+        cursor = db.scan_history.find(query)
         docs = await cursor.to_list(length=1000)
         total_scans = len(docs)
         
@@ -165,7 +169,7 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
                             pt["threats"] += 1
                             
         # Dynamic Fallback Mock Data if fresh database setup
-        if total_scans == 0:
+        if total_scans == 0 and current_user.get("role") == "admin":
             total_scans = 28
             class_counts = {
                 "Trusted Website": 12, "Safe Message": 4, "Suspicious Link": 5,

@@ -31,6 +31,8 @@ const Verify = () => {
 
   const params = new URLSearchParams(location.search);
   const mode = params.get('mode') || 'register';
+  const email = params.get('email') || '';
+  const phone = params.get('phone') || '';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,7 +79,8 @@ const Verify = () => {
             textAlign: 'center'
           }}
         >
-          OTP sent to Gmail (and WhatsApp if connected)
+          OTP sent to your email: {email || 'registered Gmail'}
+          {phone && phone !== '000000' ? ` and OTP sent to your WhatsApp: ${phone}` : ''}
         </div>
 
         <p className="auth-subtitle" style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '20px', textAlign: 'center' }}>

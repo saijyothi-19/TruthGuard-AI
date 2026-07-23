@@ -29,7 +29,7 @@ const Login = () => {
       if (data.status === 'requires_otp') {
         setInfo('OTP sent to Gmail and WhatsApp. Redirecting to verification...');
         setTimeout(() => {
-          navigate(`/verify?username=${encodeURIComponent(formData.username)}&mode=login`);
+          navigate(`/verify?username=${encodeURIComponent(formData.username)}&mode=login&email=${encodeURIComponent(data.email || '')}&phone=${encodeURIComponent(data.phone || '')}`);
         }, 1500);
       } else {
         login(data.access_token);

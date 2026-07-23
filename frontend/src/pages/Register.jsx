@@ -48,8 +48,8 @@ const Register = () => {
     }
 
     try {
-      await registerUser(formData.username, formData.email, formData.password, finalPhone);
-      navigate(`/verify?username=${encodeURIComponent(formData.username)}`);
+      const data = await registerUser(formData.username, formData.email, formData.password, finalPhone);
+      navigate(`/verify?username=${encodeURIComponent(formData.username)}&email=${encodeURIComponent(data.email || '')}&phone=${encodeURIComponent(data.phone || '')}`);
     } catch (err) {
       console.error("Registration submit error:", err);
       const detail = err.response?.data?.detail;

@@ -88,15 +88,17 @@ const Navbar = () => {
           </Link>
 
           {/* Hamburger Menu Button (☰) placed directly beside Logo */}
-          <button 
-            className="hamburger-btn" 
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            title="Open Navigation Menu"
-            style={{ background: 'rgba(99, 102, 241, 0.12)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            {showMobileMenu ? <X size={18} /> : <Menu size={18} />}
-            <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>Menu</span>
-          </button>
+          {user && (
+            <button 
+              className="hamburger-btn" 
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              title="Open Navigation Menu"
+              style={{ background: 'rgba(99, 102, 241, 0.12)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              {showMobileMenu ? <X size={18} /> : <Menu size={18} />}
+              <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>Menu</span>
+            </button>
+          )}
         </div>
 
         <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
