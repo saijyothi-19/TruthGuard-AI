@@ -117,6 +117,15 @@ function Dashboard({ defaultTab = 'home' }) {
   const [blacklist, setBlacklist] = useState([]);
   const [whitelist, setWhitelist] = useState([]);
 
+  // Feedback states
+  const [feedbackList, setFeedbackList] = useState([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackSuccess, setFeedbackSuccess] = useState(null);
+  const [feedbackError, setFeedbackError] = useState(null);
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+
   // Simulator & Smart Scanner States
   const [simType, setSimType] = useState('url');
   const [urlInput, setUrlInput] = useState('');
@@ -177,6 +186,14 @@ function Dashboard({ defaultTab = 'home' }) {
     const interval = setInterval(refreshData, 30000); // refresh every 30s
     return () => clearInterval(interval);
   }, [user]);
+
+  // Role-based protection: non-admins cannot access filters/rules tab
+  useEffect(() => {
+    if (user && user.role !== 'admin' && (activeTab === 'filters' || activeTab === 'rules')) {
+      setActiveTab('home');
+      setSearchParams({ tab: 'home' }, { replace: true });
+    }
+  }, [user, activeTab, setSearchParams]);
 
   const triggerAutoScan = useCallback(async (text, isUrl) => {
     setScanning(true);
@@ -631,7 +648,7 @@ ${rec}`;
   };
 
   // --- Rendering Home Landing Page Tab ---
-  const renderHome = () => {
+  const renderAdminHome = () => {
     return (
       <div className="tab-content home-landing-layout animate-fade">
         {/* Hero Section */}
@@ -718,6 +735,120 @@ ${rec}`;
         </div>
       </div>
     );
+  };
+
+  const renderUserHome = () => {
+    return (
+      <div className="tab-content user-home-layout animate-fade" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        {/* Welcome Banner */}
+        <div className="home-hero-card glass-card" style={{ padding: '2.5rem 2rem', borderRadius: '16px', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%)', border: '1px solid var(--border-color)' }}>
+          <div className="hero-content">
+            <span className="hero-pill flex-center" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700', marginBottom: '1rem' }}>
+              <Sparkles size={14} /> AI Protection Active
+            </span>
+            <h1 className="hero-title" style={{ fontSize: '2.2rem', fontWeight: '800', margin: '0 0 1rem 0', color: '#f8fafc', lineHeight: '1.2' }}>
+              Welcome to TruthGuard AI, {user?.username || 'User'}! 🛡️
+            </h1>
+            <p className="hero-subtitle" style={{ fontSize: '1rem', color: '#94a3b8', margin: '0 0 1.5rem 0', maxWidth: '750px', lineHeight: '1.6' }}>
+              Your personal assistant for detecting online phishing links, scams, and dangerous websites. Follow the instructions below to secure your digital space.
+            </p>
+            <div className="hero-actions" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <button className="primary-btn flex-center" onClick={() => setActiveTab('simulator')} style={{ padding: '0.75rem 1.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Zap size={18} /> Open Threat Simulator
+              </button>
+              <button className="secondary-btn flex-center" onClick={() => setActiveTab('feedback')} style={{ padding: '0.75rem 1.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', color: '#f1f5f9', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer' }}>
+                <MessageSquare size={18} /> Submit Feedback
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Start Guide */}
+        <div>
+          <h3 className="section-heading" style={{ color: '#f8fafc', fontSize: '1.2rem', fontWeight: '700', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            🚀 Quick Start Guide
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            
+            <div className="glass-card" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'rgba(30, 41, 59, 0.4)' }}>
+              <div style={{ width: '38px', height: '38px', background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem', fontWeight: 'bold' }}>1</div>
+              <h4 style={{ margin: '0 0 0.5rem 0', color: '#f8fafc', fontSize: '1.05rem' }}>Scan URLs & Text Messages</h4>
+              <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem', lineHeight: '1.6' }}>
+                Go to the **Threat Simulator** tab. Choose either "URL Scan" or "Message Scan", paste the link or text, and click **Analyze**. The system will scan the content against 80+ security engines.
+              </p>
+            </div>
+
+            <div className="glass-card" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'rgba(30, 41, 59, 0.4)' }}>
+              <div style={{ width: '38px', height: '38px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem', fontWeight: 'bold' }}>2</div>
+              <h4 style={{ margin: '0 0 0.5rem 0', color: '#f8fafc', fontSize: '1.05rem' }}>Smart Camera Scanning</h4>
+              <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem', lineHeight: '1.6' }}>
+                If you have a QR Code, Barcode, or printed sign, switch to the camera icon in **Threat Simulator**. Point your phone or laptop camera at the item to read and scan it automatically.
+              </p>
+            </div>
+
+            <div className="glass-card" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'rgba(30, 41, 59, 0.4)' }}>
+              <div style={{ width: '38px', height: '38px', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem', fontWeight: 'bold' }}>3</div>
+              <h4 style={{ margin: '0 0 0.5rem 0', color: '#f8fafc', fontSize: '1.05rem' }}>Audit Security Logs</h4>
+              <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.85rem', lineHeight: '1.6' }}>
+                Check the **Audit Logs** tab to review all past scans. You can inspect detail metrics, domain registration info, and download PDF audit certificates for any past scans.
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        {/* WhatsApp Chatbot Integration Instructions */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
+          
+          <div className="glass-card" style={{ padding: '1.75rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+            <h3 style={{ margin: '0 0 0.75rem 0', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              💬 Connect TruthGuard to WhatsApp
+            </h3>
+            <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: '1.6', marginBottom: '1.25rem' }}>
+              Verify suspicious links or messages directly inside WhatsApp! Simply forward any text message, link, or image to our automated security chatbot.
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <span style={{ color: '#10b981', fontWeight: 'bold' }}>Step 1:</span>
+                <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>Add our Twilio Sandbox Number **+1 415 523 8886** to your phone contacts.</span>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <span style={{ color: '#10b981', fontWeight: 'bold' }}>Step 2:</span>
+                <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>Send a WhatsApp message containing: <code>join standard-depth</code> to that number.</span>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <span style={{ color: '#10b981', fontWeight: 'bold' }}>Step 3:</span>
+                <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>Forward any link or text to get an instant threat analysis report!</span>
+              </div>
+            </div>
+          </div>
+
+          <WhatsAppSandboxCard confirmed={true} />
+
+        </div>
+
+        {/* Security Best Practices */}
+        <div className="glass-card" style={{ padding: '1.75rem', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.02)' }}>
+          <h4 style={{ color: '#ef4444', margin: '0 0 0.75rem 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertTriangle size={18} /> Personal Cyber Security Best Practices
+          </h4>
+          <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#cbd5e1', fontSize: '0.85rem', lineHeight: '1.7' }}>
+            <li><strong>Verify Before Clicking:</strong> Always scan links from high-urgency SMS alerts (e.g. "Your bank account is locked").</li>
+            <li><strong>Look for HTTPS:</strong> Safe links should use encrypted connections, but scammers can still get cheap SSL certs. Check domain age on our report!</li>
+            <li><strong>Impersonation Warnings:</strong> Be wary of messages from friends requesting money or OTP codes via temporary/unknown numbers.</li>
+          </ul>
+        </div>
+      </div>
+    );
+  };
+
+  const renderHome = () => {
+    if (user?.role === 'admin') {
+      return renderAdminHome();
+    } else {
+      return renderUserHome();
+    }
   };
 
   // --- Rendering Settings Tab ---
