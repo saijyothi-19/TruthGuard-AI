@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from app.database import get_db
 from app.schemas.auth import UserRegister, UserLogin, Token, UserOut, VerifyOTPRequest
 from app.security.auth_handler import hash_password, verify_password, create_access_token
+from app.dependencies.auth import get_current_user
 from app.services.notification import generate_otp, send_email_otp, send_phone_otp, send_reset_email
 from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, EmailStr, Field
