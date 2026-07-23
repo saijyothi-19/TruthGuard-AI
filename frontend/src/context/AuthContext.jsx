@@ -27,21 +27,34 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchProfile = async (storedToken) => {
+      try {
+        const decoded = decodeToken(storedToken);
+        if (decoded && decoded.exp * 1000 > Date.now()) {
+          setToken(storedToken);
+          setUser({ username: decoded.sub, role: decoded.role || 'user' });
+          const { getProfile } = await import('../api');
+          const profile = await getProfile();
+          setUser(profile);
+        } else {
+          safeLocalStorage.removeItem('truthguard_token');
+        }
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     const storedToken = safeLocalStorage.getItem('truthguard_token');
     if (storedToken) {
-      const decoded = decodeToken(storedToken);
-      // Validate expiration
-      if (decoded && decoded.exp * 1000 > Date.now()) {
-        setToken(storedToken);
-        setUser({ username: decoded.sub, role: decoded.role || 'user' });
-      } else {
-        safeLocalStorage.removeItem('truthguard_token');
-      }
+      fetchProfile(storedToken);
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
-  const login = (accessToken) => {
+  const login = async (accessToken) => {
     safeLocalStorage.setItem('truthguard_token', accessToken);
     const decoded = decodeToken(accessToken);
     setToken(accessToken);
@@ -49,6 +62,13 @@ export const AuthProvider = ({ children }) => {
       username: decoded ? decoded.sub : 'admin', 
       role: decoded ? (decoded.role || 'user') : 'admin' 
     });
+    try {
+      const { getProfile } = await import('../api');
+      const profile = await getProfile();
+      setUser(profile);
+    } catch (err) {
+      console.error("Failed to fetch full profile after login", err);
+    }
   };
 
   const logout = async () => {

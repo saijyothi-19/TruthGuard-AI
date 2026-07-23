@@ -533,3 +533,12 @@ async def resend_otp(payload: ResendOTPPayload, background_tasks: BackgroundTask
 
     raise HTTPException(status_code=404, detail="User account not found.")
 
+@router.get("/me")
+async def get_me(current_user: dict = Depends(get_current_user)):
+    return {
+        "username": current_user["username"],
+        "email": current_user.get("email"),
+        "role": current_user.get("role", "user"),
+        "phone": current_user.get("phone")
+    }
+

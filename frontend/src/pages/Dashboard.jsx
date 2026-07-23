@@ -862,7 +862,8 @@ ${rec}`;
           <div className="settings-section" style={{ marginBottom: '1.5rem' }}>
             <h4 style={{ color: '#a5b4fc', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Account Profile</h4>
             <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#cbd5e1' }}>Username: <strong>{user?.username}</strong></p>
-            <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#cbd5e1' }}>Email: <strong>{user?.email || 'spdudam19@gmail.com'}</strong></p>
+            <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#cbd5e1' }}>Email: <strong>{user?.email || 'Loading...'}</strong></p>
+            {user?.phone && <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#cbd5e1' }}>WhatsApp: <strong>{user.phone}</strong></p>}
             <p style={{ margin: '0.3rem 0', fontSize: '0.85rem', color: '#cbd5e1' }}>Role: <span className="status-pill success">{user?.role?.toUpperCase() || 'USER'}</span></p>
           </div>
 
