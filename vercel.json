@@ -2,8 +2,9 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "framework": "vite",
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "https://truthguard-ai-production-cefd.up.railway.app/api/:path*" },
-    { "source": "/((?!assets/|manifest.json|vite.svg|sw.js|favicon.ico).*)" , "destination": "/index.html" }
+  "routes": [
+    { "src": "/api/(.*)", "dest": "https://truthguard-ai-production-cefd.up.railway.app/api/$1" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
