@@ -1,4 +1,5 @@
 import React from 'react'
+// Trigger Vercel rebuild to apply new Go-compatible routing: 2026-07-23T19:53
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
